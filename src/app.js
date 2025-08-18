@@ -1,6 +1,5 @@
 require("dotenv").config(); 
 const express = require("express");
-const { error } = require("qrcode-terminal");
 
 
 class EMTULiveChecker {
