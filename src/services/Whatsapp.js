@@ -1,4 +1,4 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, Location } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs-extra');
 const path = require('path');
@@ -110,6 +110,51 @@ class WhatsApp {
         this.#client.on('message_create', (message) => {
             this.logger.debug(`Sent message to ${message.to}: ${message.body}`);
         });
+    }
+
+    onMessage(handler) {
+        if (typeof handler === 'function') {
+            this.messageHandlers.push(handler);
+        } else {
+            throw new Error('Message handler must be a function');
+        }
+    }
+
+    async sendMessage(chatId, message) {
+        try {
+            if (!this.isReady) {
+                throw new Error('WhatsApp client is not ready');
+            }
+
+            const chat = await this.client.getChatById(chatId);
+            await chat.sendMessage(message);
+            
+            this.logger.debug(`Message sent to ${chatId}: ${message.substring(0, 50)}...`);
+            return true;
+        } catch (error) {
+            this.logger.error(`Failed to send message to ${chatId}:`, error);
+            throw error;
+        }
+    }
+
+    async sendLocation(chatId, latitude, longitude, description = '') {
+        try {
+            if (!this.isReady) {
+                throw new Error('WhatsApp client is not ready');
+            }
+
+            const location = new Location(latitude, longitude, {
+                name: description
+            });
+
+            await this.client.sendMessage(chatId, location);
+            
+            this.logger.debug(`Location sent to ${chatId}: ${latitude}, ${longitude}`);
+            return true;
+        } catch (error) {
+            this.logger.error(`Failed to send location to ${chatId}:`, error);
+            throw error;
+        }
     }
 
 
