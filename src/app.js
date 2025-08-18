@@ -1,26 +1,30 @@
 require("dotenv").config(); 
 const express = require("express");
-
+const Logger = require("../utils/Logger.js");
+const { error } = require("qrcode-terminal");
 
 class EMTULiveChecker {
     #app
     #monitoringIntervals
+    #loggs
     constructor() {
         this.#app = express(); 
-        this.#monitoringIntervals = new Map();    
+        this.#monitoringIntervals = new Map(); 
+        this.#loggs = new Logger();   
     }
 
     async initialize() {
         try {
             await this.#setupExpressServer();
         } catch (ex){
-            console.log("Error on start server, look the error: ", ex);
+            this.#loggs.error(`Not initialize the server ${error}`);
             process.exit(1);
         }
     }
     
     #setupExpressServer() {
         this.#app.use(express.json());
+        this.#loggs.info("Initializing the server");
 
         this.#app.get("/health", (req, res) => {
             res.send({
@@ -31,12 +35,12 @@ class EMTULiveChecker {
             })
         });
 
-        const port = process.env.PORT
+        const port = process.env.PORT;
 
-        if(!port) console.warn("Enviroment variable PORT is not defined, using the 3000 port (default)");
+        if(!port) this.#loggs.warn("Enviroment variable PORT is not defined, using the 3000 port (default)");
 
         this.#app.listen(port || 3000, ()=> {
-            console.log(`We are live in port ${ port || 3000 }`);
+            this.#loggs.info(`We are live in port ${ port || 3000 }`);
         });
     }
 }
