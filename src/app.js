@@ -1,21 +1,25 @@
 require("dotenv").config(); 
 const express = require("express");
-const Logger = require("../utils/Logger.js");
-const { error } = require("qrcode-terminal");
+const Logger = require("./utils/Logger.js");
+const WhatsApp = require("./services/Whatsapp.js")
 
 class EMTULiveChecker {
     #app
     #monitoringIntervals
     #loggs
+    #whatszap
+
     constructor() {
         this.#app = express(); 
-        this.#monitoringIntervals = new Map(); 
+        this.#monitoringIntervals = new Map();
+        this.#whatszap = new WhatsApp(); 
         this.#loggs = new Logger();   
     }
 
     async initialize() {
         try {
             await this.#setupExpressServer();
+            await this.#whatszap.initialize();
         } catch (ex){
             this.#loggs.error(`Not initialize the server ${error}`);
             process.exit(1);
