@@ -69,7 +69,6 @@ class WhatsApp {
         });
 
         this.#client.on('authenticated', ()=>{
-            console.log('WhatsApp Autenticado');
             this.#logger.info('WhatsApp authenticated!');
         });
 
@@ -79,7 +78,7 @@ class WhatsApp {
         });
 
         this.#client.on('disconnected', (reason) => {
-            this.isReady = false;
+            this.#isReady = false;
             this.logger.warn('WhatsApp client disconnected:', reason);
             console.log('WhatsApp disconnected:', reason);
         });
@@ -122,7 +121,7 @@ class WhatsApp {
 
     async sendMessage(chatId, message) {
         try {
-            if (!this.isReady) {
+            if (!this.#isReady) {
                 throw new Error('WhatsApp client is not ready');
             }
 
@@ -139,7 +138,7 @@ class WhatsApp {
 
     async sendLocation(chatId, latitude, longitude, description = '') {
         try {
-            if (!this.isReady) {
+            if (!this.#isReady) {
                 throw new Error('WhatsApp client is not ready');
             }
 
@@ -156,8 +155,6 @@ class WhatsApp {
             throw error;
         }
     }
-
-
 }
 
 module.exports = WhatsApp;
