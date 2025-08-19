@@ -8,14 +8,14 @@ class WhatsApp {
     #client;
     #isReady;
     #logger;
-    #messageHandlers;
+    #messageHandler;
     #sessionPath; 
 
     constructor() {
         this.#client = null;
         this.#isReady = false;
         this.#logger = new Logger();
-        this.#messageHandlers = [];
+        this.#messageHandler = [];
         this.#sessionPath = process.env.WHATSAPP_SESSION_PATH || './sessions/whatsapp-session';
     }
 
@@ -93,7 +93,7 @@ class WhatsApp {
 
                 this.logger.debug(`Received message from ${message.from}: ${message.body}`);
 
-                for (const handler of this.#messageHandlers){
+                for (const handler of this.#messageHandler){
                     try {
                         await handler(message);
                     } catch (ex) {
@@ -113,7 +113,7 @@ class WhatsApp {
 
     onMessage(handler) {
         if (typeof handler === 'function') {
-            this.messageHandlers.push(handler);
+            this.#messageHandler.push(handler);
         } else {
             throw new Error('Message handler must be a function');
         }
@@ -125,7 +125,7 @@ class WhatsApp {
                 throw new Error('WhatsApp client is not ready');
             }
 
-            const chat = await this.client.getChatById(chatId);
+            const chat = await this.#client.getChatById(chatId);
             await chat.sendMessage(message);
             
             this.logger.debug(`Message sent to ${chatId}: ${message.substring(0, 50)}...`);

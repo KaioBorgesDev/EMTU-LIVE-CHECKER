@@ -1,14 +1,17 @@
 const ConfigManager = require('../utils/ConfigManager');
+const Logger = require('../utils/Logger');
 
 class MessageHandler {
     #whatsapp;
     #emtuService;
     #configManager;
+    #logger;
 
     constructor(wppService, emtuService){
         this.#whatsapp = wppService;
         this.#emtuService = emtuService;
         this.#configManager = new ConfigManager();
+        this.#logger = new Logger();
     }
 
     setupMessageHandlers() {
@@ -19,7 +22,7 @@ class MessageHandler {
                     await this.#whatsapp.sendMessage(message.from, response);
                 }
             } catch (error) {
-                this.logger.error('Error handling message:', error);
+                this.#logger.error('Error handling message:', error);
                 await this.#whatsapp.sendMessage(
                     message.from, 
                     'Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.'
@@ -76,7 +79,7 @@ class MessageHandler {
         • \`/list\` - Listar monitoramentos ativos
 
         🔍 *Consultas:*
-        • \`/search [termo]\` - Buscar linhas/paradas
+        • \`/search [linha]\` - Buscar horarios
         • \`/status\` - Status dos monitoramentos
 
         ℹ️ *Ajuda:*
@@ -110,11 +113,12 @@ class MessageHandler {
                 Use \`/search ${routeNumber}\` para buscar linhas similares.`;
             }
 
-            if (!way.includes(['ida', 'volta'])){
+            if (!['ida', 'volta'].includes(way)){
                 return `❌ Sentido "${way}". 
                 Use ida ou volta para buscar linhas similares.`;
             }
             const testTime = timeTrigger.split(':');
+
             if(testTime.length < 1){
                 return `❌ Tempo "${timeTrigger}". 
                 Use este formato HH:MM. exemplo: 10:30 (Dez horas e trinta minutos)`;
@@ -130,8 +134,7 @@ class MessageHandler {
                 chatId,
                 routeId: route.id,
                 routeNumber: route.number,
-                stopId: stop.id,
-                stopName: stop.name,
+                stop: stop,
                 triggerTime: timeTrigger,
                 way: way,
                 proximityThreshold: parseInt(process.env.PROXIMITY_THRESHOLD_METERS) || 500,
@@ -154,7 +157,7 @@ class MessageHandler {
             `;
 
         } catch (error) {
-            this.logger.error('Error in monitor command:', error);
+            this.#logger.error('Error in monitor command:', error);
             return '❌ Erro ao configurar monitoramento. Tente novamente.';
         }
     }
@@ -201,13 +204,14 @@ class MessageHandler {
         const searchTerm = text.split(' ').slice(1).join(' '); // Remove '/search' or 'buscar'
         
         if (!searchTerm) {
-            return 'Uso correto: `/search [termo]`\nExemplo: `/search terminal`';
+            return 'Uso correto: `/search [termo]`\nExemplo: `/search 708`';
         }
 
         try {
+            // Usando searchTerm como routeNumber também, já que a API precisa de um número de linha
             const [routes, stops] = await Promise.all([
-                this.#emtuService.searchRoutes(searchTerm),
-                this.#emtuService.searchStops(searchTerm)
+                this.#emtuService.searchRoutes(searchTerm, searchTerm),
+                this.#emtuService.searchStops(searchTerm, searchTerm)
             ]);
 
             let response = `🔍 *Resultados da busca por "${searchTerm}":*\n\n`;
@@ -239,14 +243,15 @@ class MessageHandler {
 
             return response;
         } catch (error) {
-            this.logger.error('Error in search command:', error);
+            this.#logger.error('Error in search command:', error);
             return '❌ Erro ao realizar busca. Tente novamente.';
         }
     }
 
     async handleStatusCommand(chatId) {
         const configs = await this.#configManager.getActiveConfigurations(chatId);
-        const alertStats = await this.alertManager.getAlertStatistics(chatId);
+        // Removendo a parte de alertas por enquanto já que não temos o alertManager
+        const alertStats = { today: 0, total: 0 };
 
         return `
                 📊 *Status do Sistema:*

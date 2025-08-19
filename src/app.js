@@ -4,6 +4,7 @@ const Logger = require('./utils/Logger.js');
 const WhatsApp = require('./services/Whatsapp.js');
 const ConfigManager = require('./utils/ConfigManager.js');
 const MessageHandler = require('./services/MessageHandler.js');
+const EMTUService = require('./services/EmtuService.js');
 
 
 class EMTULiveChecker {
@@ -13,7 +14,7 @@ class EMTULiveChecker {
     #configManager;
     #messageHandler;
     #monitoringIntervals;
-
+    #emtuService;
 
     constructor() {
         this.#app = express(); 
@@ -21,23 +22,23 @@ class EMTULiveChecker {
         this.#whatszap = new WhatsApp(); 
         this.#configManager = new ConfigManager();
         this.#loggs = new Logger();  
-        this.#messageHandler = new MessageHandler();
+        this.#emtuService = new EMTUService();
+        this.#messageHandler = new MessageHandler(this.#whatszap, this.#emtuService);
     }
 
     async initialize() {
-        try {
-            await this.#setupExpressServer();
+        
+        await this.#setupExpressServer();
 
-            await this.#whatszap.initialize();
+        await this.#whatszap.initialize();
 
-            await this.#configManager.loadConfigurations();
+        await this.#configManager.loadConfigurations();
 
-            await this.#loggs.info('EMTU-LIVE-CHECKER INITIALIZED SUCCESFULLY');
+        await this.#messageHandler.setupMessageHandlers();
 
-        } catch (ex){
-            this.#loggs.error(`Not initialize the server ${ex}`);
-            process.exit(1);
-        }
+        await this.#loggs.info('EMTU-LIVE-CHECKER INITIALIZED SUCCESFULLY');
+
+        
     }
     
     #setupExpressServer() {
