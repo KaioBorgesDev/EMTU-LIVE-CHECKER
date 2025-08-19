@@ -1,6 +1,11 @@
 const fs = require('fs-extra');
 const path = require('path');
-const Logger = require('./logger');
+const Logger = require('./Logger');
+
+/**
+ *Armazenar e gerenciar configurações personalizadas para diferentes chats/usuários
+  que monitoram rotas específicas de transporte público (atualmente ônibus da EMTU).
+ */
 
 class ConfigManager {
     constructor() {
@@ -140,7 +145,7 @@ class ConfigManager {
         }
     }
 
-    async deactivateConfiguration(chatId, routeNumber) {
+    async desactivateConfiguration(chatId, routeNumber) {
         try {
             const key = this.generateConfigKey(chatId, routeNumber);
             const config = this.configurations.get(key);
