@@ -214,7 +214,6 @@ tail -f ./logs/app.log  # Acompanhar logs em tempo real
 
 - Sessões WhatsApp são armazenadas localmente
 - Dados pessoais não são compartilhados
-- API keys devem ser mantidas em segredo
 - Use HTTPS em produção
 
 ## 🚀 Deploy em Produção
