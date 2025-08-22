@@ -1,4 +1,4 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, Location } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs-extra');
 const path = require('path');
@@ -63,7 +63,6 @@ class WhatsAppService {
         this.client.on('ready', () => {
             this.isReady = true;
             this.logger.info('WhatsApp client is ready!');
-            console.log('✅ WhatsApp connected successfully!');
         });
 
         this.client.on('authenticated', () => {
@@ -130,7 +129,6 @@ class WhatsAppService {
             await chat.sendMessage(message);
             
             this.logger.debug(`Message sent to ${chatId}: ${message.substring(0, 50)}...`);
-            return true;
         } catch (error) {
             this.logger.error(`Failed to send message to ${chatId}:`, error);
             throw error;

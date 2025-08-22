@@ -1,60 +1,53 @@
 const axios = require('axios');
-const Logger = require('../utils/logger');
 
 class EMTUService {
     constructor() {
-        this.baseURL = process.env.EMTU_API_BASE_URL || 'https://api.emtu.sp.gov.br';
-        this.apiKey = process.env.EMTU_API_KEY;
-        this.logger = new Logger();
+        this.baseURL = process.env.EMTU_API_BASE_URL || 'https://bustime.noxxonsat.com.br';
         this.cache = new Map();
-        this.cacheTimeout = 5 * 60 * 1000; // 5 minutes cache
-        
-        // Initialize axios instance
+        this.cacheTimeout = 5 * 60 * 1000;
+
+
+        // Username e password podem ser qualquer coisa
+        const username = 'user';
+        const password = 'pass';
+        const basicAuth = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+
         this.api = axios.create({
             baseURL: this.baseURL,
             timeout: 10000,
             headers: {
                 'Content-Type': 'application/json',
-                'User-Agent': 'EMTU-Live-Checker/1.0.0'
+                'User-Agent': 'EMTU-Live-Checker/1.0.0',
+                'Authorization': basicAuth
             }
         });
-
-        // Add API key to requests if available
-        if (this.apiKey) {
-            this.api.defaults.headers.common['Authorization'] = `Bearer ${this.apiKey}`;
-        }
-
-        // Setup request/response interceptors
+        
         this.setupInterceptors();
     }
 
     setupInterceptors() {
-        // Request interceptor
+        
         this.api.interceptors.request.use(
             (config) => {
-                this.logger.debug(`EMTU API Request: ${config.method?.toUpperCase()} ${config.url}`);
                 return config;
             },
             (error) => {
-                this.logger.error('EMTU API Request Error:', error);
                 return Promise.reject(error);
             }
         );
 
-        // Response interceptor
+        
         this.api.interceptors.response.use(
             (response) => {
-                this.logger.debug(`EMTU API Response: ${response.status} ${response.config.url}`);
                 return response;
             },
             (error) => {
-                this.logger.error('EMTU API Response Error:', error.response?.status, error.response?.data || error.message);
                 return Promise.reject(error);
             }
         );
     }
 
-    // Cache management
+    
     getCacheKey(method, ...params) {
         return `${method}_${params.join('_')}`;
     }
@@ -77,73 +70,58 @@ class EMTUService {
 
     clearCache() {
         this.cache.clear();
-        this.logger.debug('EMTU API cache cleared');
     }
 
-    // Route management methods
-    async getAllRoutes() {
-        const cacheKey = this.getCacheKey('routes');
-        const cached = this.getCache(cacheKey);
-        if (cached) return cached;
-
-        try {
-            const response = await this.api.get('/v1/routes');
-            const routes = this.normalizeRoutes(response.data);
-            this.setCache(cacheKey, routes);
-            return routes;
-        } catch (error) {
-            this.logger.error('Failed to fetch routes:', error);
-            // Return mock data for development
-            return this.getMockRoutes();
-        }
-    }
+    
 
     async findRoute(routeNumber) {
         try {
-            const routes = await this.getAllRoutes();
-            return routes.find(route => 
-                route.number.toLowerCase() === routeNumber.toLowerCase() ||
-                route.name.toLowerCase().includes(routeNumber.toLowerCase())
-            );
+            const response = await this.api.get(`/portal?linha=${routeNumber}`);
+            const linhas = response.data.linhas || [];
+            if (!linhas.length) return { linhas: [] };
+            return { linhas };
         } catch (error) {
-            this.logger.error('Failed to find route:', error);
-            return null;
+            console.log('Erro na requisição:', error.message);
+            return { linhas: [] };
         }
     }
 
-    async searchRoutes(searchTerm) {
+    async getVehiclePositions(routeNumber) {
         try {
-            const routes = await this.getAllRoutes();
-            const term = searchTerm.toLowerCase();
-            
-            return routes.filter(route =>
-                route.number.toLowerCase().includes(term) ||
-                route.name.toLowerCase().includes(term) ||
-                route.description?.toLowerCase().includes(term)
-            ).slice(0, 10); // Limit results
+            const response = await this.api.get(`/portal?linha=${routeNumber}`);
+            const linhas = response.data.linhas || [];
+            if (!linhas.length) return [];
+            return linhas[0].veiculos || [];
         } catch (error) {
-            this.logger.error('Failed to search routes:', error);
+            console.log('Erro ao buscar posições dos veículos:', error.message);
             return [];
         }
     }
 
-    async getRouteDetails(routeId) {
-        const cacheKey = this.getCacheKey('route_details', routeId);
-        const cached = this.getCache(cacheKey);
-        if (cached) return cached;
-
+    async getRotas(routeNumber) {
         try {
-            const response = await this.api.get(`/v1/routes/${routeId}`);
-            const details = this.normalizeRouteDetails(response.data);
-            this.setCache(cacheKey, details);
-            return details;
+            const response = await this.api.get(`/portal?linha=${routeNumber}`);
+            const linhas = response.data.linhas || [];
+            if (!linhas.length) return [];
+            return linhas[0].rotas || [];
         } catch (error) {
-            this.logger.error('Failed to fetch route details:', error);
-            return this.getMockRouteDetails(routeId);
+            console.log('Erro ao buscar rotas:', error.message);
+            return [];
         }
     }
 
-    // Stop management methods
+    async getPontos(routeNumber, sentido = 'ida') {
+        try {
+            const rotas = await this.getRotas(routeNumber);
+            const rota = rotas.find(r => r.sentido === sentido);
+            if (!rota) return [];
+            return rota.pontos || [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    
     async getStopsForRoute(routeId) {
         const cacheKey = this.getCacheKey('route_stops', routeId);
         const cached = this.getCache(cacheKey);
@@ -155,7 +133,6 @@ class EMTUService {
             this.setCache(cacheKey, stops);
             return stops;
         } catch (error) {
-            this.logger.error('Failed to fetch route stops:', error);
             return this.getMockStops(routeId);
         }
     }
@@ -176,7 +153,6 @@ class EMTUService {
                 stop.description?.toLowerCase().includes(term)
             );
         } catch (error) {
-            this.logger.error('Failed to find stop:', error);
             return null;
         }
     }
@@ -190,9 +166,8 @@ class EMTUService {
                 stop.name.toLowerCase().includes(term) ||
                 stop.description?.toLowerCase().includes(term) ||
                 stop.address?.toLowerCase().includes(term)
-            ).slice(0, 10); // Limit results
+            ).slice(0, 10); 
         } catch (error) {
-            this.logger.error('Failed to search stops:', error);
             return [];
         }
     }
@@ -208,7 +183,6 @@ class EMTUService {
             this.setCache(cacheKey, stops);
             return stops;
         } catch (error) {
-            this.logger.error('Failed to fetch all stops:', error);
             return this.getMockStops();
         }
     }
@@ -230,33 +204,23 @@ class EMTUService {
             this.setCache(cacheKey, location);
             return location;
         } catch (error) {
-            this.logger.error('Failed to fetch stop location:', error);
             return this.getMockStopLocation(stopId);
         }
     }
 
-    // Vehicle tracking methods
-    async getVehiclePositions(routeId) {
-        try {
-            const response = await this.api.get(`/v1/routes/${routeId}/vehicles`);
-            return this.normalizeVehicles(response.data);
-        } catch (error) {
-            this.logger.error('Failed to fetch vehicle positions:', error);
-            return this.getMockVehicles(routeId);
-        }
-    }
+    
+    // (método removido, pois já existe a nova versão compatível com a API atual)
 
     async getVehicleInfo(vehicleId) {
         try {
             const response = await this.api.get(`/v1/vehicles/${vehicleId}`);
             return this.normalizeVehicle(response.data);
         } catch (error) {
-            this.logger.error('Failed to fetch vehicle info:', error);
             return null;
         }
     }
 
-    // Real-time predictions
+    
     async getArrivalPredictions(stopId, routeId = null) {
         try {
             const url = routeId 
@@ -266,12 +230,11 @@ class EMTUService {
             const response = await this.api.get(url);
             return this.normalizePredictions(response.data);
         } catch (error) {
-            this.logger.error('Failed to fetch arrival predictions:', error);
             return this.getMockPredictions(stopId, routeId);
         }
     }
 
-    // Data normalization methods
+    
     normalizeRoutes(data) {
         if (!Array.isArray(data)) data = [data];
         
@@ -356,7 +319,7 @@ class EMTUService {
         };
     }
 
-    // Mock data for development/testing
+        
     getMockRoutes() {
         return [
             {
@@ -494,13 +457,12 @@ class EMTUService {
         };
     }
 
-    // Health check
+        
     async healthCheck() {
         try {
-            const response = await this.api.get('/health', { timeout: 5000 });
+            await this.api.get('/health', { timeout: 5000 });
             return { status: 'ok', api: 'connected' };
         } catch (error) {
-            this.logger.warn('EMTU API health check failed, using mock data');
             return { status: 'degraded', api: 'mock_mode' };
         }
     }
