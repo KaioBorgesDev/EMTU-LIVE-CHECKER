@@ -79,7 +79,7 @@ describe('EMTU Live Checker Tests', () => {
         });
 
         test('should respect cooldown period', async () => {
-            // First alert should be allowed
+            
             let shouldSend = await alertManager.shouldSendAlert(
                 testChatId,
                 testRouteId,
@@ -88,7 +88,7 @@ describe('EMTU Live Checker Tests', () => {
             );
             expect(shouldSend).toBe(true);
 
-            // Record the alert
+            
             await alertManager.recordAlert(
                 testChatId,
                 testRouteId,
@@ -97,7 +97,7 @@ describe('EMTU Live Checker Tests', () => {
                 'Test Stop'
             );
 
-            // Immediate second alert should be blocked by cooldown
+            
             shouldSend = await alertManager.shouldSendAlert(
                 testChatId,
                 testRouteId,
@@ -183,20 +183,20 @@ describe('EMTU Live Checker Tests', () => {
             const EMTULiveChecker = require('../src/index');
             const checker = new EMTULiveChecker();
             
-            // Distance between São Paulo city center and Santos
+            
             const distance = checker.calculateDistance(
-                -23.5505, -46.6333, // São Paulo
-                -23.9608, -46.3331  // Santos
+                -23.5505, -46.6333, 
+                -23.9608, -46.3331  
             );
             
-            // Should be approximately 65km
+            
             expect(distance).toBeGreaterThan(60000);
             expect(distance).toBeLessThan(70000);
         });
     });
 
     afterAll(async () => {
-        // Cleanup test data
+        
         if (alertManager) {
             await alertManager.clearAlertsForChat('test_chat_001');
             await alertManager.clearAlertsForChat('test_chat_config');

@@ -7,9 +7,9 @@ class EMTUService {
         this.apiKey = process.env.EMTU_API_KEY;
         this.logger = new Logger();
         this.cache = new Map();
-        this.cacheTimeout = 5 * 60 * 1000; // 5 minutes cache
+    this.cacheTimeout = 5 * 60 * 1000; 
         
-        // Initialize axios instance
+        
         this.api = axios.create({
             baseURL: this.baseURL,
             timeout: 10000,
@@ -19,17 +19,17 @@ class EMTUService {
             }
         });
 
-        // Add API key to requests if available
+        
         if (this.apiKey) {
             this.api.defaults.headers.common['Authorization'] = `Bearer ${this.apiKey}`;
         }
 
-        // Setup request/response interceptors
+        
         this.setupInterceptors();
     }
 
     setupInterceptors() {
-        // Request interceptor
+        
         this.api.interceptors.request.use(
             (config) => {
                 this.logger.debug(`EMTU API Request: ${config.method?.toUpperCase()} ${config.url}`);
@@ -41,7 +41,7 @@ class EMTUService {
             }
         );
 
-        // Response interceptor
+        
         this.api.interceptors.response.use(
             (response) => {
                 this.logger.debug(`EMTU API Response: ${response.status} ${response.config.url}`);
@@ -54,7 +54,7 @@ class EMTUService {
         );
     }
 
-    // Cache management
+    
     getCacheKey(method, ...params) {
         return `${method}_${params.join('_')}`;
     }
@@ -80,7 +80,7 @@ class EMTUService {
         this.logger.debug('EMTU API cache cleared');
     }
 
-    // Route management methods
+    
     async getAllRoutes() {
         const cacheKey = this.getCacheKey('routes');
         const cached = this.getCache(cacheKey);
@@ -120,7 +120,7 @@ class EMTUService {
                 route.number.toLowerCase().includes(term) ||
                 route.name.toLowerCase().includes(term) ||
                 route.description?.toLowerCase().includes(term)
-            ).slice(0, 10); // Limit results
+            ).slice(0, 10); 
         } catch (error) {
             this.logger.error('Failed to search routes:', error);
             return [];
@@ -143,7 +143,7 @@ class EMTUService {
         }
     }
 
-    // Stop management methods
+    
     async getStopsForRoute(routeId) {
         const cacheKey = this.getCacheKey('route_stops', routeId);
         const cached = this.getCache(cacheKey);
@@ -190,7 +190,7 @@ class EMTUService {
                 stop.name.toLowerCase().includes(term) ||
                 stop.description?.toLowerCase().includes(term) ||
                 stop.address?.toLowerCase().includes(term)
-            ).slice(0, 10); // Limit results
+            ).slice(0, 10); 
         } catch (error) {
             this.logger.error('Failed to search stops:', error);
             return [];
@@ -235,7 +235,7 @@ class EMTUService {
         }
     }
 
-    // Vehicle tracking methods
+    
     async getVehiclePositions(routeId) {
         try {
             const response = await this.api.get(`/v1/routes/${routeId}/vehicles`);
@@ -256,7 +256,7 @@ class EMTUService {
         }
     }
 
-    // Real-time predictions
+    
     async getArrivalPredictions(stopId, routeId = null) {
         try {
             const url = routeId 
@@ -271,7 +271,7 @@ class EMTUService {
         }
     }
 
-    // Data normalization methods
+    
     normalizeRoutes(data) {
         if (!Array.isArray(data)) data = [data];
         
@@ -356,7 +356,7 @@ class EMTUService {
         };
     }
 
-    // Mock data for development/testing
+        
     getMockRoutes() {
         return [
             {
@@ -494,7 +494,7 @@ class EMTUService {
         };
     }
 
-    // Health check
+        
     async healthCheck() {
         try {
             const response = await this.api.get('/health', { timeout: 5000 });

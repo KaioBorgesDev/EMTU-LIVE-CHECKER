@@ -63,7 +63,6 @@ class WhatsAppService {
         this.client.on('ready', () => {
             this.isReady = true;
             this.logger.info('WhatsApp client is ready!');
-            console.log('✅ WhatsApp connected successfully!');
         });
 
         this.client.on('authenticated', () => {
@@ -130,7 +129,6 @@ class WhatsAppService {
             await chat.sendMessage(message);
             
             this.logger.debug(`Message sent to ${chatId}: ${message.substring(0, 50)}...`);
-            return true;
         } catch (error) {
             this.logger.error(`Failed to send message to ${chatId}:`, error);
             throw error;
@@ -151,7 +149,6 @@ class WhatsAppService {
         } catch (error) {
             this.logger.error(`Failed to send location to ${chatId}:`, error);
             throw error;
-        }
     }
 
     async getChatInfo(chatId) {

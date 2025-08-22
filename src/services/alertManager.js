@@ -71,7 +71,7 @@ class AlertManager {
                 data.alerts[key] = alertList;
             }
 
-            // Convert sentAlerts Map to object
+            
             for (const [key, alertData] of this.sentAlerts.entries()) {
                 data.sentAlerts[key] = alertData;
             }
@@ -133,7 +133,7 @@ class AlertManager {
                 stopName
             });
 
-            // Add to alerts history
+            
             if (!this.alerts.has(chatRouteKey)) {
                 this.alerts.set(chatRouteKey, []);
             }
@@ -148,13 +148,13 @@ class AlertManager {
 
             this.alerts.get(chatRouteKey).push(alertRecord);
 
-            // Keep only last 100 alerts per chat/route combination
+            
             const alertList = this.alerts.get(chatRouteKey);
             if (alertList.length > 100) {
                 alertList.splice(0, alertList.length - 100);
             }
 
-            // Save to file
+            
             await this.saveAlerts();
 
             this.logger.info(`Alert recorded: ${chatId} - Route ${routeId} - Vehicle ${vehicleId} - Distance ${Math.round(distance)}m`);
@@ -190,7 +190,7 @@ class AlertManager {
             weekAgo.setDate(weekAgo.getDate() - 7);
             weekAgo.setHours(0, 0, 0, 0);
 
-            // If specific route requested
+            
             if (routeId) {
                 const chatRouteKey = this.generateChatRouteKey(chatId, routeId);
                 const alerts = this.alerts.get(chatRouteKey) || [];
@@ -207,7 +207,7 @@ class AlertManager {
                 };
             }
 
-            // Get stats for all routes for this chat
+            
             for (const [key, alerts] of this.alerts.entries()) {
                 if (key.startsWith(chatId + '_')) {
                     const routeIdFromKey = key.split('_')[1];
@@ -254,7 +254,7 @@ class AlertManager {
                 const alerts = this.alerts.get(chatRouteKey) || [];
                 allAlerts = [...alerts];
             } else {
-                // Get alerts from all routes for this chat
+                
                 for (const [key, alerts] of this.alerts.entries()) {
                     if (key.startsWith(chatId + '_')) {
                         allAlerts.push(...alerts.map(alert => ({
@@ -265,7 +265,7 @@ class AlertManager {
                 }
             }
 
-            // Sort by timestamp (newest first) and limit
+            
             allAlerts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             
             return allAlerts.slice(0, limit);
@@ -282,7 +282,7 @@ class AlertManager {
 
             let cleaned = 0;
 
-            // Clean up old alerts
+            
             for (const [key, alerts] of this.alerts.entries()) {
                 const filteredAlerts = alerts.filter(alert => 
                     new Date(alert.timestamp) > oneMonthAgo
@@ -293,13 +293,13 @@ class AlertManager {
                     cleaned += alerts.length - filteredAlerts.length;
                 }
 
-                // Remove empty alert lists
+                
                 if (filteredAlerts.length === 0) {
                     this.alerts.delete(key);
                 }
             }
 
-            // Clean up old sent alerts tracking
+            
             for (const [key, alertData] of this.sentAlerts.entries()) {
                 if (alertData.lastSent < oneMonthAgo) {
                     this.sentAlerts.delete(key);
@@ -320,7 +320,7 @@ class AlertManager {
         try {
             let cleared = 0;
 
-            // Clear alerts
+            
             for (const key of this.alerts.keys()) {
                 if (key.startsWith(chatId + '_')) {
                     this.alerts.delete(key);
@@ -328,7 +328,7 @@ class AlertManager {
                 }
             }
 
-            // Clear sent alerts tracking
+            
             for (const key of this.sentAlerts.keys()) {
                 if (key.startsWith(chatId + '_')) {
                     this.sentAlerts.delete(key);
@@ -351,10 +351,10 @@ class AlertManager {
         try {
             const chatRouteKey = this.generateChatRouteKey(chatId, routeId);
             
-            // Clear alerts for specific route
+            
             const deleted = this.alerts.delete(chatRouteKey);
 
-            // Clear related sent alerts tracking
+            
             for (const key of this.sentAlerts.keys()) {
                 if (key.startsWith(chatRouteKey + '_')) {
                     this.sentAlerts.delete(key);
@@ -374,7 +374,7 @@ class AlertManager {
         }
     }
 
-    // Get system-wide statistics
+    
     async getSystemStatistics() {
         try {
             const stats = {

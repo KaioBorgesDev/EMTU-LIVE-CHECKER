@@ -5,7 +5,7 @@ class Logger {
     constructor() {
         this.logLevel = process.env.LOG_LEVEL || 'info';
         this.logFile = process.env.LOG_FILE || './logs/app.log';
-        this.maxFileSize = 10 * 1024 * 1024; // 10MB
+        this.maxFileSize = 10 * 1024 * 1024; 
         this.maxFiles = 5;
         
         this.levels = {
@@ -22,10 +22,10 @@ class Logger {
 
     async initialize() {
         try {
-            // Ensure logs directory exists
+            
             await fs.ensureDir(path.dirname(this.logFile));
             
-            // Setup log rotation
+            
             await this.rotateLogsIfNeeded();
         } catch (error) {
             console.error('Failed to initialize logger:', error);
@@ -52,14 +52,14 @@ class Logger {
             const logName = path.basename(this.logFile, path.extname(this.logFile));
             const logExt = path.extname(this.logFile);
             
-            // Move existing log files
+            
             for (let i = this.maxFiles - 1; i >= 1; i--) {
                 const oldFile = path.join(logDir, `${logName}.${i}${logExt}`);
                 const newFile = path.join(logDir, `${logName}.${i + 1}${logExt}`);
                 
                 if (await fs.pathExists(oldFile)) {
                     if (i === this.maxFiles - 1) {
-                        // Delete the oldest file
+                        
                         await fs.remove(oldFile);
                     } else {
                         await fs.move(oldFile, newFile);
@@ -67,7 +67,7 @@ class Logger {
                 }
             }
             
-            // Move current log file
+            
             const firstBackup = path.join(logDir, `${logName}.1${logExt}`);
             await fs.move(this.logFile, firstBackup);
             
@@ -107,10 +107,10 @@ class Logger {
 
         const formattedMessage = this.formatMessage(level, message, ...args);
         
-        // Always write to file if logging is enabled for this level
+        
         await this.writeToFile(formattedMessage);
         
-        // Console output based on level
+        
         switch (level) {
             case 'error':
                 console.error(formattedMessage);
@@ -145,7 +145,7 @@ class Logger {
         return this.log('debug', message, ...args);
     }
 
-    // Utility methods for structured logging
+    
     logApiRequest(method, url, status, duration) {
         this.info(`API Request: ${method} ${url} - ${status} (${duration}ms)`);
     }
@@ -170,12 +170,12 @@ class Logger {
         }
     }
 
-    // Create a child logger with context
+    
     child(context) {
         return new ChildLogger(this, context);
     }
 
-    // Get log statistics
+    
     async getLogStatistics() {
         try {
             const stats = {
@@ -191,7 +191,7 @@ class Logger {
                 stats.newestLogDate = currentStats.mtime;
             }
 
-            // Check for rotated log files
+            
             const logDir = path.dirname(this.logFile);
             const logName = path.basename(this.logFile, path.extname(this.logFile));
             const logExt = path.extname(this.logFile);
@@ -220,7 +220,7 @@ class Logger {
         }
     }
 
-    // Clear all log files
+    
     async clearLogs() {
         try {
             const logDir = path.dirname(this.logFile);

@@ -12,10 +12,10 @@ class ConfigManager {
 
     async initialize() {
         try {
-            // Ensure data directory exists
+            
             await fs.ensureDir(path.dirname(this.configPath));
             
-            // Load existing configurations
+            
             await this.loadConfigurations();
             
             this.logger.info('Configuration Manager initialized');
@@ -54,7 +54,7 @@ class ConfigManager {
                 version: '1.0.0'
             };
 
-            // Convert configurations Map to object
+            
             for (const [key, config] of this.configurations.entries()) {
                 data.configurations[key] = {
                     ...config,
@@ -114,7 +114,7 @@ class ConfigManager {
                 }
             }
 
-            // Sort by creation date (newest first)
+            
             configs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             
             return configs;
@@ -329,7 +329,7 @@ class ConfigManager {
             let cleanedCount = 0;
             
             for (const [key, config] of this.configurations.entries()) {
-                // Clean up inactive configurations older than specified days
+                
                 if (!config.isActive && new Date(config.lastUpdated) < cutoffDate) {
                     this.configurations.delete(key);
                     cleanedCount++;

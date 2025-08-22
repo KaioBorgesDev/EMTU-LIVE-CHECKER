@@ -185,10 +185,10 @@ Você será notificado quando um ônibus estiver se aproximando da parada.`;
     }
 
     async handleStopCommand(text, chatId) {
-        const parts = text.split(' ').slice(1); // Remove '/stop'
+    const parts = text.split(' ').slice(1); 
         
         if (parts.length === 0) {
-            // Stop all monitoring for this chat
+            
             const stopped = await this.stopAllMonitoring(chatId);
             return stopped > 0 
                 ? `✅ ${stopped} monitoramento(s) interrompido(s).`
@@ -223,7 +223,7 @@ Você será notificado quando um ônibus estiver se aproximando da parada.`;
     }
 
     async handleSearchCommand(text) {
-        const searchTerm = text.split(' ').slice(1).join(' '); // Remove '/search' or 'buscar'
+    const searchTerm = text.split(' ').slice(1).join(' '); 
         
         if (!searchTerm) {
             return 'Uso correto: `/search [termo]`\nExemplo: `/search terminal`';
@@ -287,12 +287,12 @@ Use \`/list\` para ver detalhes dos monitoramentos ativos.`;
     async startMonitoring(config) {
         const key = `${config.chatId}_${config.routeNumber}`;
         
-        // Stop existing monitoring for this route/chat combination
+        
         if (this.monitoringIntervals.has(key)) {
             clearInterval(this.monitoringIntervals.get(key));
         }
 
-        // Start new monitoring interval
+        
         const interval = setInterval(async () => {
             try {
                 await this.checkBusProximity(config);
@@ -390,7 +390,7 @@ O ônibus está se aproximando da sua parada!`;
     }
 
     calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; // Earth's radius in meters
+    const R = 6371e3; 
         const φ1 = lat1 * Math.PI/180;
         const φ2 = lat2 * Math.PI/180;
         const Δφ = (lat2-lat1) * Math.PI/180;
@@ -401,7 +401,7 @@ O ônibus está se aproximando da sua parada!`;
                   Math.sin(Δλ/2) * Math.sin(Δλ/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-        return R * c; // Distance in meters
+    return R * c; 
     }
 
     formatUptime(uptime) {
@@ -413,13 +413,13 @@ O ônibus está se aproximando da sua parada!`;
     async shutdown() {
         this.logger.info('Shutting down EMTU Live Checker...');
         
-        // Clear all monitoring intervals
+        
         for (const interval of this.monitoringIntervals.values()) {
             clearInterval(interval);
         }
         this.monitoringIntervals.clear();
 
-        // Close WhatsApp connection
+        
         if (this.whatsapp) {
             await this.whatsapp.destroy();
         }
@@ -428,11 +428,11 @@ O ônibus está se aproximando da sua parada!`;
     }
 }
 
-// Initialize and start the application
+
 async function main() {
     const checker = new EMTULiveChecker();
     
-    // Handle graceful shutdown
+    
     process.on('SIGINT', async () => {
         console.log('\nReceived SIGINT, shutting down gracefully...');
         await checker.shutdown();
@@ -445,7 +445,7 @@ async function main() {
         process.exit(0);
     });
 
-    // Start the application
+    
     const initialized = await checker.initialize();
     if (!initialized) {
         console.error('Failed to initialize application');
