@@ -86,6 +86,7 @@ npm start
 - `/list` - Listar monitoramentos ativos
 - `/search [termo]` - Buscar linhas e paradas
 - `/status` - Status dos monitoramentos
+- `/where [linha] [sentido] ex: /where 708 volta` - Status dos monitoramentos
 
 #### ℹ️ Ajuda
 - `/help` ou `ajuda` - Mostrar comandos disponíveis
@@ -94,7 +95,7 @@ npm start
 
 **Iniciar monitoramento:**
 ```
-/monitor 001 Terminal São Mateus
+/monitor 001 708 1
 ```
 
 **Buscar linhas:**
