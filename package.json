@@ -1,18 +1,14 @@
 {
   "name": "emtu-live-checker",
   "version": "1.0.0",
-  "description": "",
-  "main": "src/app.js",
+  "description": "Bot integrated with EMTU API to track bus location in real time with WhatsApp notifications",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
     "test": "jest",
     "lint": "eslint src/",
     "format": "prettier --write src/"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/KaioBorgesDev/EMTU-LIVE-CHECKER.git"
   },
   "keywords": [
     "emtu",
@@ -24,12 +20,6 @@
   ],
   "author": "KaioBorgesDev",
   "license": "MIT",
-  
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/KaioBorgesDev/EMTU-LIVE-CHECKER/issues"
-  },
-  "homepage": "https://github.com/KaioBorgesDev/EMTU-LIVE-CHECKER#readme",
   "dependencies": {
     "axios": "^1.6.0",
     "whatsapp-web.js": "^1.23.0",

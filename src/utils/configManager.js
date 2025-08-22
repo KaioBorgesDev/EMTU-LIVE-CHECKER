@@ -1,11 +1,6 @@
 const fs = require('fs-extra');
 const path = require('path');
-const Logger = require('./Logger');
-
-/**
- *Armazenar e gerenciar configurações personalizadas para diferentes chats/usuários
-  que monitoram rotas específicas de transporte público (atualmente ônibus da EMTU).
- */
+const Logger = require('./logger');
 
 class ConfigManager {
     constructor() {
@@ -17,8 +12,10 @@ class ConfigManager {
 
     async initialize() {
         try {
+            // Ensure data directory exists
             await fs.ensureDir(path.dirname(this.configPath));
             
+            // Load existing configurations
             await this.loadConfigurations();
             
             this.logger.info('Configuration Manager initialized');
@@ -145,7 +142,7 @@ class ConfigManager {
         }
     }
 
-    async desactivateConfiguration(chatId, routeNumber) {
+    async deactivateConfiguration(chatId, routeNumber) {
         try {
             const key = this.generateConfigKey(chatId, routeNumber);
             const config = this.configurations.get(key);
@@ -229,6 +226,207 @@ class ConfigManager {
         } catch (error) {
             this.logger.error('Failed to delete all configurations:', error);
             return 0;
+        }
+    }
+
+    async updateConfiguration(chatId, routeNumber, updates) {
+        try {
+            const key = this.generateConfigKey(chatId, routeNumber);
+            const config = this.configurations.get(key);
+            
+            if (config) {
+                const updatedConfig = {
+                    ...config,
+                    ...updates,
+                    lastUpdated: new Date()
+                };
+                
+                this.configurations.set(key, updatedConfig);
+                await this.saveConfigurations();
+                
+                this.logger.info(`Configuration updated: ${chatId} - Route ${routeNumber}`);
+                return updatedConfig;
+            }
+            
+            return null;
+        } catch (error) {
+            this.logger.error('Failed to update configuration:', error);
+            return null;
+        }
+    }
+
+    async getConfigurationsByRoute(routeId) {
+        try {
+            const configs = [];
+            
+            for (const [key, config] of this.configurations.entries()) {
+                if (config.routeId === routeId && config.isActive) {
+                    configs.push({
+                        key,
+                        ...config
+                    });
+                }
+            }
+            
+            return configs;
+        } catch (error) {
+            this.logger.error('Failed to get configurations by route:', error);
+            return [];
+        }
+    }
+
+    async getStatistics() {
+        try {
+            const stats = {
+                totalConfigurations: this.configurations.size,
+                activeConfigurations: 0,
+                uniqueChats: new Set(),
+                uniqueRoutes: new Set(),
+                configurationsToday: 0
+            };
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            for (const [key, config] of this.configurations.entries()) {
+                if (config.isActive) {
+                    stats.activeConfigurations++;
+                }
+                
+                const [chatId] = key.split('_');
+                stats.uniqueChats.add(chatId);
+                stats.uniqueRoutes.add(config.routeId);
+                
+                if (new Date(config.createdAt) >= today) {
+                    stats.configurationsToday++;
+                }
+            }
+
+            return {
+                total: stats.totalConfigurations,
+                active: stats.activeConfigurations,
+                uniqueChats: stats.uniqueChats.size,
+                uniqueRoutes: stats.uniqueRoutes.size,
+                createdToday: stats.configurationsToday
+            };
+        } catch (error) {
+            this.logger.error('Failed to get configuration statistics:', error);
+            return {
+                total: 0,
+                active: 0,
+                uniqueChats: 0,
+                uniqueRoutes: 0,
+                createdToday: 0
+            };
+        }
+    }
+
+    async cleanupOldConfigurations(daysOld = 30) {
+        try {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+            
+            let cleanedCount = 0;
+            
+            for (const [key, config] of this.configurations.entries()) {
+                // Clean up inactive configurations older than specified days
+                if (!config.isActive && new Date(config.lastUpdated) < cutoffDate) {
+                    this.configurations.delete(key);
+                    cleanedCount++;
+                }
+            }
+            
+            if (cleanedCount > 0) {
+                await this.saveConfigurations();
+                this.logger.info(`Cleaned up ${cleanedCount} old configurations`);
+            }
+            
+            return cleanedCount;
+        } catch (error) {
+            this.logger.error('Failed to cleanup old configurations:', error);
+            return 0;
+        }
+    }
+
+    async exportConfigurations(chatId = null) {
+        try {
+            const configs = [];
+            
+            for (const [key, config] of this.configurations.entries()) {
+                if (!chatId || key.startsWith(chatId + '_')) {
+                    configs.push({
+                        key,
+                        ...config,
+                        createdAt: config.createdAt.toISOString(),
+                        lastUpdated: config.lastUpdated ? config.lastUpdated.toISOString() : config.createdAt.toISOString()
+                    });
+                }
+            }
+            
+            return {
+                configurations: configs,
+                exportedAt: new Date().toISOString(),
+                totalCount: configs.length
+            };
+        } catch (error) {
+            this.logger.error('Failed to export configurations:', error);
+            return {
+                configurations: [],
+                exportedAt: new Date().toISOString(),
+                totalCount: 0
+            };
+        }
+    }
+
+    async importConfigurations(data, overwrite = false) {
+        try {
+            let importedCount = 0;
+            let skippedCount = 0;
+            
+            if (data.configurations && Array.isArray(data.configurations)) {
+                for (const config of data.configurations) {
+                    const key = config.key;
+                    
+                    if (!key) continue;
+                    
+                    // Check if configuration already exists
+                    if (this.configurations.has(key) && !overwrite) {
+                        skippedCount++;
+                        continue;
+                    }
+                    
+                    // Prepare configuration for import
+                    const configToImport = {
+                        ...config,
+                        createdAt: new Date(config.createdAt),
+                        lastUpdated: config.lastUpdated ? new Date(config.lastUpdated) : new Date(config.createdAt)
+                    };
+                    
+                    delete configToImport.key;
+                    
+                    this.configurations.set(key, configToImport);
+                    importedCount++;
+                }
+                
+                if (importedCount > 0) {
+                    await this.saveConfigurations();
+                }
+            }
+            
+            this.logger.info(`Imported ${importedCount} configurations, skipped ${skippedCount}`);
+            
+            return {
+                imported: importedCount,
+                skipped: skippedCount,
+                total: importedCount + skippedCount
+            };
+        } catch (error) {
+            this.logger.error('Failed to import configurations:', error);
+            return {
+                imported: 0,
+                skipped: 0,
+                total: 0
+            };
         }
     }
 }

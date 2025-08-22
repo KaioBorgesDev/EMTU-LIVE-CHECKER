@@ -22,8 +22,10 @@ class Logger {
 
     async initialize() {
         try {
+            // Ensure logs directory exists
             await fs.ensureDir(path.dirname(this.logFile));
             
+            // Setup log rotation
             await this.rotateLogsIfNeeded();
         } catch (error) {
             console.error('Failed to initialize logger:', error);
