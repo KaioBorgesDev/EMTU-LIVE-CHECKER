@@ -1,5 +1,4 @@
-version: "3.8"
-
+version: '3.8'
 
 services:
   emtu-live-checker:
@@ -11,26 +10,27 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - EMTU_API_BASE_URL="https://bustime.noxxonsat.com.br"
-      - CHECK_INTERVAL_MINUTOS=1
+      - EMTU_API_BASE_URL=https://api.emtu.sp.gov.br
+      - EMTU_API_KEY=${EMTU_API_KEY}
+      - CHECK_INTERVAL_MINUTES=1
       - PROXIMITY_THRESHOLD_METERS=500
       - MAX_ALERTS_PER_ROUTE=5
       - LOG_LEVEL=info
     volumes:
       - ./data:/app/data
-      - ./sessions:/app/sessions
       - ./logs:/app/logs
+      - ./sessions:/app/sessions
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 1m30s
+      interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 50s
+      start_period: 40s
     networks:
-      - live-checker-net
+      - emtu-network
 
 networks:
-  live-checker-net:
+  emtu-network:
     driver: bridge
 
 volumes:
