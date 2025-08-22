@@ -40,8 +40,7 @@ cp .env.example .env
 Edite o arquivo `.env` com suas configurações:
 ```env
 # EMTU API URLs and Keys
-EMTU_API_BASE_URL=https://api.emtu.sp.gov.br
-EMTU_API_KEY=your_emtu_api_key_here
+EMTU_API_BASE_URL=https://api.emtu.sp.gov.br (opcional)
 
 # WhatsApp Configuration
 WHATSAPP_SESSION_PATH=./sessions/whatsapp-session
