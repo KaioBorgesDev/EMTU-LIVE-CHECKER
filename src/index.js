@@ -111,6 +111,10 @@ class EMTULiveChecker {
             return await this.handleStatusCommand(chatId);
         }
 
+        if (text.startsWith('/where')) {
+            return await this.handleWhereCommand(text, chatId);
+        }
+
         return 'Comando não reconhecido. Digite "ajuda" para ver os comandos disponíveis.';
     }
 
@@ -121,6 +125,8 @@ class EMTULiveChecker {
         • \`/monitor [linha] [parada]\` - Iniciar monitoramento
         • \`/stop [linha]\` - Parar monitoramento
         • \`/list\` - Listar monitoramentos ativos
+        • \`/where [ida/volta] [linha]\` - Listar localizações dos ônibus.
+
 
         🔍 *Consultas:*
         • \`/search [termo]\` - Buscar linhas/paradas
@@ -135,7 +141,71 @@ class EMTULiveChecker {
         O bot irá te notificar quando o ônibus estiver próximo da parada configurada! 🔔`;
     }
 
+    async handleWhereCommand(text, chatId) {
+        const parts = text.split(' ').slice(1);
+        
+        if (parts.length < 1) {
+            return 'Uso correto: `/where [linha] [ida/volta]`\nExemplo: `/where 708BI2 ida`';
+        }
+
+        const routeNumber = parts[0];
+        const direction = parts[1]; 
+        try {
+            const vehicles = await this.emtuService.getVehiclePositions(routeNumber);
+            
+            if (!vehicles || vehicles.length === 0) {
+                return `❌ Nenhum veículo encontrado para a linha "${routeNumber}" ou linha não existe.`;
+            }
+
+            let filteredVehicles = vehicles;
+            if (direction && (direction === 'ida' || direction === 'volta')) {
+                filteredVehicles = vehicles.filter(vehicle => 
+                    vehicle.sentidoLinha && vehicle.sentidoLinha.toLowerCase() === direction.toLowerCase()
+                );
+                
+                if (filteredVehicles.length === 0) {
+                    return `❌ Nenhum veículo encontrado no sentido "${direction}" para a linha "${routeNumber}".`;
+                }
+            }
+
+            let response = `📍 *Localizações dos ônibus da linha ${routeNumber}`;
+            if (direction) {
+                response += ` - Sentido ${direction}`;
+            }
+            response += ':*\n\n';
+            
+            // Enviar localização primeiro, depois a mensagem de texto
+            for (let i = 0; i < filteredVehicles.length; i++) {
+                const vehicle = filteredVehicles[i];
+                
+                await this.whatsapp.sendLocation(
+                    chatId,
+                    vehicle.latitude,
+                    vehicle.longitude,
+                    `🚌 ${vehicle.prefixo} - Linha ${routeNumber} - ${vehicle.empresa}`
+                );
+                
+                response += `🚌 *Veículo ${i + 1}:*\n`;
+                response += `🆔 ID: ${vehicle.idVeiculo || vehicle.prefixo}\n`;
+                response += `🚗 Prefixo: ${vehicle.prefixo}\n`;
+                response += `🏷️ Placa: ${vehicle.placa}\n`;
+                response += `🏢 Empresa: ${vehicle.empresa}\n`;
+                response += `➡️ Sentido: ${vehicle.sentidoLinha}\n`;
+                const dataTransmissao = new Date(vehicle.dataUltimaTransmissao);
+                response += `📡 Última transmissão: ${dataTransmissao.toLocaleString('pt-BR')}\n\n`;
+            }
+
+            response += `📊 Total de veículos em operação: ${filteredVehicles.length}`;
+            return response;
+
+        } catch (error) {
+            this.logger.error('Error in where command:', error);
+            return '❌ Erro ao buscar localizações dos veículos. Tente novamente.';
+        }
+    }
+
     async handleMonitorCommand(text, chatId) {
+        const parts = text.split(' ').slice(1);
         
         if (parts.length < 2) {
             return 'Uso correto: `/monitor [linha] [parada]`\nExemplo: `/monitor 001 Terminal São Mateus`';
@@ -147,12 +217,14 @@ class EMTULiveChecker {
         try {
             const route = await this.emtuService.findRoute(routeNumber);
             if (!route) {
-                return `❌ Linha "${routeNumber}" não encontrada. Use \`/search ${routeNumber}\` para buscar linhas similares.`;
+                return `❌ Linha "${routeNumber}" não encontrada.
+                Use \`/search ${routeNumber}\` para buscar linhas similares.`;
             }
 
             const stop = await this.emtuService.findStop(stopName, route.id);
             if (!stop) {
-                return `❌ Parada "${stopName}" não encontrada na linha ${routeNumber}. Use \`/search ${stopName}\` para buscar paradas.`;
+                return `❌ Parada "${stopName}" não encontrada na linha ${routeNumber}. 
+                Use \`/search ${stopName}\` para buscar paradas.`;
             }
 
             const config = {
@@ -172,11 +244,11 @@ class EMTULiveChecker {
             await this.startMonitoring(config);
 
             return `✅ Monitoramento iniciado!
-🚌 Linha: ${route.number} - ${route.name}
-📍 Parada: ${stop.name}
-📏 Distância de alerta: ${config.proximityThreshold}m
+                🚌 Linha: ${route.number} - ${route.name}
+                📍 Parada: ${stop.name}
+                📏 Distância de alerta: ${config.proximityThreshold}m
 
-Você será notificado quando um ônibus estiver se aproximando da parada.`;
+            Você será notificado quando um ônibus estiver se aproximando da parada.`;
 
         } catch (error) {
             this.logger.error('Error in monitor command:', error);
@@ -185,7 +257,7 @@ Você será notificado quando um ônibus estiver se aproximando da parada.`;
     }
 
     async handleStopCommand(text, chatId) {
-    const parts = text.split(' ').slice(1); 
+        const parts = text.split(' ').slice(1); 
         
         if (parts.length === 0) {
             
@@ -223,48 +295,51 @@ Você será notificado quando um ônibus estiver se aproximando da parada.`;
     }
 
     async handleSearchCommand(text) {
-    const searchTerm = text.split(' ').slice(1).join(' '); 
-        
+        const searchTerm = text.split(' ').slice(1).join(' ');
+
         if (!searchTerm) {
-            return 'Uso correto: `/search [termo]`\nExemplo: `/search terminal`';
+            return 'Uso correto: `/search [termo]`\nExemplo: `/search 708`';
         }
 
         try {
-            const [routes, stops] = await Promise.all([
-                this.emtuService.searchRoutes(searchTerm),
-                this.emtuService.searchStops(searchTerm)
-            ]);
+            const result = await this.emtuService.findRoute(searchTerm);
+
+            if (!result || !result.linhas || result.linhas.length === 0) {
+                return `❌ Nenhuma linha encontrada para "${searchTerm}".`;
+            }
 
             let response = `🔍 *Resultados da busca por "${searchTerm}":*\n\n`;
 
-            if (routes.length > 0) {
-                response += '🚌 *Linhas encontradas:*\n';
-                routes.slice(0, 5).forEach(route => {
-                    response += `• ${route.number} - ${route.name}\n`;
-                });
-                if (routes.length > 5) {
-                    response += `... e mais ${routes.length - 5} linhas\n`;
+            result.linhas.forEach(linha => {
+                response += `🚌 *Linha:* ${linha.codigo} - ${linha.consorcio}\n`;
+                response += `  Tarifa: R$${linha.tarifa}\n`;
+                response += `  Status: ${linha.status}\n`;
+                if (linha.veiculos && linha.veiculos.length > 0) {
+                    response += 'Veículos em operação:\n';
+                    linha.veiculos.forEach(veic => {
+                        response += `    • Prefixo: ${veic.prefixo}, Placa: ${veic.placa},
+                        Empresa: ${veic.empresa}, Sentido: ${veic.sentidoLinha}\n`;
+                    });
+                }
+                if (linha.rotas && linha.rotas.length > 0) {
+                    linha.rotas.forEach(rota => {
+                        response += `  Sentido: ${rota.sentido}\n`;
+                        response += `  Destino: ${rota.destino}\n`;
+                        response += 'Pontos de parada:\n';
+                        rota.pontos.slice(0, 5).forEach(ponto => {
+                            response += `    • ${ponto.endereco}\n`;
+                        });
+                        if (rota.pontos.length > 5) {
+                            response += `    ... e mais ${rota.pontos.length - 5} pontos\n`;
+                        }
+                        response += `  Horários: ${rota.horarios}\n`;
+                    });
                 }
                 response += '\n';
-            }
-
-            if (stops.length > 0) {
-                response += '📍 *Paradas encontradas:*\n';
-                stops.slice(0, 5).forEach(stop => {
-                    response += `• ${stop.name}\n`;
-                });
-                if (stops.length > 5) {
-                    response += `... e mais ${stops.length - 5} paradas\n`;
-                }
-            }
-
-            if (routes.length === 0 && stops.length === 0) {
-                response += '❌ Nenhum resultado encontrado.';
-            }
-
+            });
             return response;
         } catch (error) {
-            this.logger.error('Error in search command:', error);
+            console.log(error);
             return '❌ Erro ao realizar busca. Tente novamente.';
         }
     }
@@ -274,14 +349,13 @@ Você será notificado quando um ônibus estiver se aproximando da parada.`;
         const alertStats = await this.alertManager.getAlertStatistics(chatId);
 
         return `📊 *Status do Sistema:*
+            👤 *Seus monitoramentos:* ${configs.length}
+            🔔 *Alertas enviados hoje:* ${alertStats.today}
+            📈 *Total de alertas:* ${alertStats.total}
+            ⏱️ *Sistema ativo há:* ${this.formatUptime(process.uptime())}
+            ✅ *Status:* Online
 
-👤 *Seus monitoramentos:* ${configs.length}
-🔔 *Alertas enviados hoje:* ${alertStats.today}
-📈 *Total de alertas:* ${alertStats.total}
-⏱️ *Sistema ativo há:* ${this.formatUptime(process.uptime())}
-✅ *Status:* Online
-
-Use \`/list\` para ver detalhes dos monitoramentos ativos.`;
+        Use \`/list\` para ver detalhes dos monitoramentos ativos.`;
     }
 
     async startMonitoring(config) {

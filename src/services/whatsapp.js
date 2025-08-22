@@ -1,4 +1,4 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, Location } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs-extra');
 const path = require('path');
@@ -149,6 +149,7 @@ class WhatsAppService {
         } catch (error) {
             this.logger.error(`Failed to send location to ${chatId}:`, error);
             throw error;
+        }
     }
 
     async getChatInfo(chatId) {
