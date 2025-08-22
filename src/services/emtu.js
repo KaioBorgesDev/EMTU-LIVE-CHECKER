@@ -7,9 +7,8 @@ class EMTUService {
         this.apiKey = process.env.EMTU_API_KEY;
         this.logger = new Logger();
         this.cache = new Map();
-    this.cacheTimeout = 5 * 60 * 1000; 
-        
-        
+        this.cacheTimeout = 5 * 60 * 1000;
+
         this.api = axios.create({
             baseURL: this.baseURL,
             timeout: 10000,
@@ -81,65 +80,52 @@ class EMTUService {
     }
 
     
-    async getAllRoutes() {
-        const cacheKey = this.getCacheKey('routes');
-        const cached = this.getCache(cacheKey);
-        if (cached) return cached;
-
-        try {
-            const response = await this.api.get('/v1/routes');
-            const routes = this.normalizeRoutes(response.data);
-            this.setCache(cacheKey, routes);
-            return routes;
-        } catch (error) {
-            this.logger.error('Failed to fetch routes:', error);
-            // Return mock data for development
-            return this.getMockRoutes();
-        }
-    }
 
     async findRoute(routeNumber) {
         try {
-            const routes = await this.getAllRoutes();
-            return routes.find(route => 
-                route.number.toLowerCase() === routeNumber.toLowerCase() ||
-                route.name.toLowerCase().includes(routeNumber.toLowerCase())
-            );
+            const response = await this.api.get(`?linha=${routeNumber}`);
+            const linhas = response.data.linhas || [];
+            if (!linhas.length) return null;
+            return linhas[0];
         } catch (error) {
             this.logger.error('Failed to find route:', error);
             return null;
         }
     }
 
-    async searchRoutes(searchTerm) {
+    async getVehiclePositions(routeNumber) {
         try {
-            const routes = await this.getAllRoutes();
-            const term = searchTerm.toLowerCase();
-            
-            return routes.filter(route =>
-                route.number.toLowerCase().includes(term) ||
-                route.name.toLowerCase().includes(term) ||
-                route.description?.toLowerCase().includes(term)
-            ).slice(0, 10); 
+            const response = await this.api.get(`?linha=${routeNumber}`);
+            const linhas = response.data.linhas || [];
+            if (!linhas.length) return [];
+            return linhas[0].veiculos || [];
         } catch (error) {
-            this.logger.error('Failed to search routes:', error);
+            this.logger.error('Failed to fetch vehicle positions:', error);
             return [];
         }
     }
 
-    async getRouteDetails(routeId) {
-        const cacheKey = this.getCacheKey('route_details', routeId);
-        const cached = this.getCache(cacheKey);
-        if (cached) return cached;
-
+    async getRotas(routeNumber) {
         try {
-            const response = await this.api.get(`/v1/routes/${routeId}`);
-            const details = this.normalizeRouteDetails(response.data);
-            this.setCache(cacheKey, details);
-            return details;
+            const response = await this.api.get(`?linha=${routeNumber}`);
+            const linhas = response.data.linhas || [];
+            if (!linhas.length) return [];
+            return linhas[0].rotas || [];
         } catch (error) {
-            this.logger.error('Failed to fetch route details:', error);
-            return this.getMockRouteDetails(routeId);
+            this.logger.error('Failed to fetch rotas:', error);
+            return [];
+        }
+    }
+
+    async getPontos(routeNumber, sentido = 'ida') {
+        try {
+            const rotas = await this.getRotas(routeNumber);
+            const rota = rotas.find(r => r.sentido === sentido);
+            if (!rota) return [];
+            return rota.pontos || [];
+        } catch (error) {
+            this.logger.error('Failed to fetch pontos:', error);
+            return [];
         }
     }
 
@@ -236,15 +222,7 @@ class EMTUService {
     }
 
     
-    async getVehiclePositions(routeId) {
-        try {
-            const response = await this.api.get(`/v1/routes/${routeId}/vehicles`);
-            return this.normalizeVehicles(response.data);
-        } catch (error) {
-            this.logger.error('Failed to fetch vehicle positions:', error);
-            return this.getMockVehicles(routeId);
-        }
-    }
+    // (método removido, pois já existe a nova versão compatível com a API atual)
 
     async getVehicleInfo(vehicleId) {
         try {
@@ -497,7 +475,7 @@ class EMTUService {
         
     async healthCheck() {
         try {
-            const response = await this.api.get('/health', { timeout: 5000 });
+            await this.api.get('/health', { timeout: 5000 });
             return { status: 'ok', api: 'connected' };
         } catch (error) {
             this.logger.warn('EMTU API health check failed, using mock data');
