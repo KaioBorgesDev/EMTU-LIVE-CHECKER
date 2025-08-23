@@ -56,6 +56,7 @@
     /* Navbar */
     .navbar{ position:sticky; top:0; z-index:100; backdrop-filter:saturate(180%) blur(10px); background:linear-gradient(90deg,rgba(255,255,255,.75),rgba(255,255,255,.5)); border-bottom:var(--border) }
     [data-theme="dark"] .navbar{ background:linear-gradient(90deg,rgba(17,22,42,.7),rgba(17,22,42,.4)) }
+    [data-theme="dark"] .mobile-menu{ background:rgba(17,22,42,.9); }
     .nav-inner{ display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.8rem 0 }
     .brand{ display:flex; align-items:center; gap:.75rem; font-weight:800; letter-spacing:.2px }
     .brand .logo{ width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,var(--primary),var(--purple)); display:grid; place-items:center; color:#fff; box-shadow:var(--shadow) }
@@ -63,6 +64,28 @@
     .nav-links a{ padding:.5rem .7rem; border-radius:10px }
     .nav-actions{ display:flex; gap:.5rem; align-items:center }
     .toggle{ cursor:pointer; padding:.5rem .7rem; border-radius:10px; border:var(--border) }
+    
+    /* Hamburger menu */
+    .hamburger{ display:none; cursor:pointer; padding:.5rem .7rem; border-radius:10px; border:var(--border); background:var(--surface); }
+    .hamburger-icon{ width:24px; height:18px; position:relative; }
+    .hamburger-icon span{ display:block; position:absolute; height:2px; width:100%; background:var(--text); border-radius:1px; opacity:1; left:0; transform:rotate(0deg); transition:.25s ease-in-out; }
+    .hamburger-icon span:nth-child(1){ top:0px; }
+    .hamburger-icon span:nth-child(2){ top:8px; }
+    .hamburger-icon span:nth-child(3){ top:16px; }
+    .hamburger.open .hamburger-icon span:nth-child(1){ top:8px; transform:rotate(135deg); }
+    .hamburger.open .hamburger-icon span:nth-child(2){ opacity:0; left:-60px; }
+    .hamburger.open .hamburger-icon span:nth-child(3){ top:8px; transform:rotate(-135deg); }
+    
+    /* Mobile menu */
+    .mobile-menu{ display:none; position:absolute; top:100%; left:0; right:0; background:var(--surface); border-bottom:var(--border); box-shadow:var(--shadow); backdrop-filter:saturate(180%) blur(10px); }
+    .mobile-menu.open{ display:block; animation:slideDown 0.3s ease-out; }
+    .mobile-menu-content{ padding:1rem; }
+    .mobile-nav-links{ display:flex; flex-direction:column; gap:.5rem; margin-bottom:1rem; }
+    .mobile-nav-links a{ padding:.7rem; border-radius:10px; border:var(--border); transition:.2s background; }
+    .mobile-nav-links a:hover{ background:rgba(0,112,243,.08); }
+    .mobile-nav-actions{ display:flex; gap:.5rem; flex-wrap:wrap; }
+    
+    @keyframes slideDown{ from{ opacity:0; transform:translateY(-10px); } to{ opacity:1; transform:translateY(0); } }
 
     /* Hero */
     .hero{ position:relative; overflow:hidden; }
@@ -150,6 +173,11 @@
       .play{ grid-template-columns:1fr; }
       .toc{ display:none }
       .sidebar{ position:relative; top:auto; max-height:none }
+      
+      /* Mobile navbar */
+      .nav-links{ display:none; }
+      .hamburger{ display:block; }
+      .navbar{ position:relative; }
     }
   </style>
 </head>
@@ -175,6 +203,30 @@
         <button id="themeBtn" class="toggle" aria-label="Alternar tema">🌙</button>
         <a class="btn ghost" href="https://github.com/KaioBorgesDev/EMTU-LIVE-CHECKER" target="_blank" rel="noopener">GitHub</a>
         <a class="btn primary" href="#docs">Começar</a>
+      </div>
+      <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+        <div class="hamburger-icon">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+      <div class="mobile-menu-content">
+        <nav class="mobile-nav-links">
+          <a href="#inicio">Início</a>
+          <a href="#docs">Docs</a>
+          <a href="#api">API</a>
+          <a href="#playground">Playground</a>
+          <a href="#deploy">Deploy</a>
+          <a href="#contribuicao">Contribuir</a>
+        </nav>
+        <div class="mobile-nav-actions">
+          <button id="themeBtnMobile" class="toggle" aria-label="Alternar tema">🌙</button>
+          <a class="btn ghost" href="https://github.com/KaioBorgesDev/EMTU-LIVE-CHECKER" target="_blank" rel="noopener">GitHub</a>
+          <a class="btn primary" href="#docs">Começar</a>
+        </div>
       </div>
     </div>
   </div>
@@ -435,16 +487,49 @@ WantedBy=multi-user.target</code></pre>
       if(saved === 'dark') document.documentElement.setAttribute('data-theme','dark');
       else if(saved === 'light') document.documentElement.setAttribute('data-theme','light');
       else document.documentElement.setAttribute('data-theme','auto');
+      
       const btn = document.getElementById('themeBtn');
+      const btnMobile = document.getElementById('themeBtnMobile');
       const cycle = { 'auto':'dark', 'dark':'light', 'light':'auto' };
-      btn.addEventListener('click',()=>{
+      
+      const updateTheme = ()=>{
         const current = document.documentElement.getAttribute('data-theme')||'auto';
         const next = cycle[current];
         document.documentElement.setAttribute('data-theme', next);
         localStorage.setItem(key, next);
-        btn.textContent = next==='dark'?'🌙':next==='light'?'☀️':'🌓';
-      });
+        const icon = next==='dark'?'🌙':next==='light'?'☀️':'🌓';
+        btn.textContent = icon;
+        btnMobile.textContent = icon;
+      };
+      
+      btn.addEventListener('click', updateTheme);
+      btnMobile.addEventListener('click', updateTheme);
     })();
+
+    // ======== Menu Hamburger ========
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    hamburgerBtn.addEventListener('click', ()=>{
+      hamburgerBtn.classList.toggle('open');
+      mobileMenu.classList.toggle('open');
+    });
+    
+    // Fechar menu ao clicar em link
+    document.querySelectorAll('.mobile-nav-links a').forEach(link=>{
+      link.addEventListener('click', ()=>{
+        hamburgerBtn.classList.remove('open');
+        mobileMenu.classList.remove('open');
+      });
+    });
+    
+    // Fechar menu ao redimensionar para desktop
+    window.addEventListener('resize', ()=>{
+      if(window.innerWidth > 980){
+        hamburgerBtn.classList.remove('open');
+        mobileMenu.classList.remove('open');
+      }
+    });
 
     // ======== Reveal on scroll ========
     const io = new IntersectionObserver((entries)=>{
