@@ -1,6 +1,7 @@
 # EMTU Live Checker 🚌
 
-Bot integrado com a API da EMTU para rastrear a localização de ônibus em tempo real via WhatsApp, enviando alertas personalizados quando o veículo se aproxima de uma parada predefinida.
+Bot integrado com a API da EMTU para rastrear a localização de ônibus em tempo real via WhatsApp, enviando alertas personalizados quando o veículo se aproxima de uma parada predefinida. Veja agora em https://kaioborgesdev.github.io/EMTU-LIVE-CHECKER/
+
 
 ## 🚀 Funcionalidades
 
