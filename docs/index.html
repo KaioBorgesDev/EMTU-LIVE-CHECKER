@@ -194,7 +194,7 @@
       <nav class="nav-links">
         <a href="#inicio">Início</a>
         <a href="#docs">Docs</a>
-        <a href="#api">API</a>
+        <a href="#commands">Commands</a>
         <a href="#playground">Playground</a>
         <a href="#deploy">Deploy</a>
         <a href="#contribuicao">Contribuir</a>
@@ -217,7 +217,7 @@
         <nav class="mobile-nav-links">
           <a href="#inicio">Início</a>
           <a href="#docs">Docs</a>
-          <a href="#api">API</a>
+          <a href="#commands">API</a>
           <a href="#playground">Playground</a>
           <a href="#deploy">Deploy</a>
           <a href="#contribuicao">Contribuir</a>
@@ -269,9 +269,9 @@
     <!-- HOW IT WORKS -->
     <section class="section container">
       <h2>Como funciona</h2>
-      <div class="grid cols-3">
-        <div class="card step reveal"><h3>Conecte</h3><p>Configure seu número do WhatsApp e o token no <code>.env</code>.</p></div>
-        <div class="card step reveal"><h3>Monitore</h3><p>Use <code>/monitor 001 708 1</code> para iniciar um monitoramento.</p></div>
+      <div class="grid cols-3 steps">
+        <div class="card step reveal"><h3>Conecte</h3><p>Basta scannear o QrCode gerado no terminal da sua aplicação.</p></div>
+        <div class="card step reveal"><h3>Monitore</h3><p>Use <code>/monitor [linha] [ponto] [horário]</code> para iniciar um monitoramento a partir do horário desejado. O ponto é o número encontrado no site/app oficial da EMTU.</p></div>
         <div class="card step reveal"><h3>Receba</h3><p>Alertas são enviados quando o ônibus estiver chegando, atrasado ou fora de rota.</p></div>
       </div>
     </section>
@@ -281,15 +281,15 @@
       <h2>Quickstart</h2>
       <div class="play">
         <div class="code">
-          <button class="btn copy" data-copy="/monitor 001 708 1">Copiar</button>
-<pre><code>$ /monitor 001 708 1
-Iniciando monitoramento da linha <001 708 sentido 1>
+          <button class="btn copy" data-copy="/monitor 708 volta 09:30 ">Copiar</button>
+<pre><code>$ /monitor 708 volta 09:30 
+Iniciando monitoramento da linha <708 iniciando 09:30-10h sentido volta>
 Use /stop para encerrar.
 Dica: /status mostra o status do sistema.</code></pre>
         </div>
         <div class="io">
           <div class="input-row">
-            <input id="cmd" class="input" placeholder="Digite um comando, ex: /monitor 001 708 1" aria-label="Campo de comando"/>
+            <input id="cmd" class="input" placeholder="Digite um comando, ex: /monitor 708 volta 09:30 " aria-label="Campo de comando"/>
             <button class="btn primary" id="run">Executar</button>
           </div>
           <pre id="out" aria-live="polite">💡 Digite um comando para testar.</pre>
@@ -303,9 +303,9 @@ Dica: /status mostra o status do sistema.</code></pre>
       <div class="play">
         <div class="io">
           <h3>Simulador</h3>
-          <p class="muted">Teste respostas do bot localmente. Comandos suportados: <code>/monitor</code>, <code>/status</code>, <code>/stop</code>.</p>
+          <p class="muted">Teste respostas do bot localmente. Comandos suportados: <code>/monitor</code>, <code>/where</code>, <code>/search</code>, <code>/list</code>, <code>/status</code>, <code>/stop</code>, <code>/help</code>.</p>
           <div class="input-row">
-            <input id="pg-cmd" class="input" placeholder="/monitor 376"/>
+            <input id="pg-cmd" class="input" placeholder="/monitor 376 54321 09:15"/>
             <button class="btn" id="pg-run">Rodar</button>
           </div>
           <pre id="pg-out">—</pre>
@@ -313,29 +313,33 @@ Dica: /status mostra o status do sistema.</code></pre>
         <div class="code">
           <button class="btn copy" data-target="#env" aria-label="Copiar .env">Copiar</button>
 <pre><code id="env"># .env (exemplo)
-WHATSAPP_NUMBER=+55XXXXXXXXXXX
-EMTU_API_KEY=coloque_sua_chave
-ALERT_RADIUS_METERS=300
-QUIET_HOURS=23-06
+PROXIMITY_THRESHOLD_METERS=500
+CHECK_INTERVAL_MINUTES=1
+MAX_ALERTS_PER_ROUTE=5  # Máximo de alertas por linha (anti-spam)
+QUIET_HOURS=2  # Após este horário a partir do momento iniciado, para de avisar (já é preocupante)
 </code></pre>
         </div>
       </div>
     </section>
 
     <!-- API REFERENCE -->
-    <section id="api" class="section container">
-      <h2>API Reference</h2>
+    <section id="commands" class="section container">
+      <h2>Command Reference</h2>
       <table aria-label="Tabela de comandos">
         <thead>
           <tr><th>Comando</th><th>Descrição</th><th>Exemplo</th></tr>
         </thead>
         <tbody>
-          <tr id="cmd-monitor"><td><code>/monitor &lt;empresa&gt; &lt;linha&gt; &lt;sentido&gt;</code></td><td>Inicia o monitoramento da linha.</td><td><code>/monitor 001 708 1</code></td></tr>
-          <tr id="cmd-status"><td><code>/status</code></td><td>Mostra o status do sistema, fila e uptime.</td><td><code>/status</code></td></tr>
-          <tr id="cmd-stop"><td><code>/stop</code></td><td>Interrompe monitoramentos ativos para seu número.</td><td><code>/stop</code></td></tr>
+          <tr id="cmd-monitor"><td><code>/monitor [linha] [ponto] [horário]</code></td><td>Inicia o monitoramento de uma linha em um ponto específico a partir de um horário. O ponto é o número encontrado no site/app oficial da EMTU.</td><td><code>/monitor 708 01 08:30</code></td></tr>
+          <tr id="cmd-stop"><td><code>/stop [linha]</code></td><td>Interrompe monitoramento específico ou todos (se não especificar linha).</td><td><code>/stop 001</code> ou <code>/stop</code></td></tr>
+          <tr id="cmd-list"><td><code>/list</code> ou <code>listar</code></td><td>Lista todos os monitoramentos ativos do usuário.</td><td><code>/list</code></td></tr>
+          <tr id="cmd-where"><td><code>/where [linha] [ida/volta]</code></td><td>Mostra localização em tempo real dos ônibus de uma linha.</td><td><code>/where 708BI2 ida</code></td></tr>
+          <tr id="cmd-search"><td><code>/search [termo]</code> ou <code>buscar [termo]</code></td><td>Busca por linhas ou paradas usando um termo.</td><td><code>/search 708</code></td></tr>
+          <tr id="cmd-status"><td><code>/status</code></td><td>Mostra estatísticas pessoais e status do sistema.</td><td><code>/status</code></td></tr>
+          <tr id="cmd-help"><td><code>/help</code> ou <code>ajuda</code></td><td>Mostra lista completa de comandos disponíveis.</td><td><code>/help</code></td></tr>
         </tbody>
       </table>
-      <p class="muted">Links diretos: <a href="#cmd-monitor">/monitor</a> • <a href="#cmd-status">/status</a> • <a href="#cmd-stop">/stop</a></p>
+      <p class="muted">Links diretos: <a href="#cmd-monitor">/monitor</a> • <a href="#cmd-stop">/stop</a> • <a href="#cmd-list">/list</a> • <a href="#cmd-where">/where</a> • <a href="#cmd-search">/search</a> • <a href="#cmd-status">/status</a> • <a href="#cmd-help">/help</a></p>
     </section>
 
     <!-- DOCS -->
@@ -360,8 +364,8 @@ QUIET_HOURS=23-06
         <article class="docs-content">
           <div class="doc-section" id="d-quickstart">
             <h3>Quickstart</h3>
-            <div class="callout ok">Requer Node 18+ e acesso ao WhatsApp Web.</div>
-<pre class="code"><button class="btn copy" data-copy="git clone https://github.com/KaioBorgesDev/EMTU-LIVE-CHECKER && cd EMTU-LIVE-CHECKER && cp .env.example .env">Copiar</button><code>$ git clone …
+            <div class="callout ok">Requer Node 18+ e acesso a um telefone com WhatsApp.</div>
+<pre class="code"><button class="btn copy" data-copy="git clone https://github.com/KaioBorgesDev/EMTU-LIVE-CHECKER && cd EMTU-LIVE-CHECKER && cp .env.example .env">Copiar</button><code>$ git clone https://github.com/KaioBorgesDev/EMTU-LIVE-CHECKER.git
 $ cd EMTU-LIVE-CHECKER
 $ cp .env.example .env
 $ npm i && npm run start</code></pre>
@@ -369,27 +373,44 @@ $ npm i && npm run start</code></pre>
           <div class="doc-section" id="d-comandos">
             <h3>Comandos</h3>
             <ul>
-              <li><code>/monitor</code> — inicia um monitoramento de linha.</li>
-              <li><code>/status</code> — status do sistema.</li>
-              <li><code>/stop</code> — encerra monitoramentos.</li>
+              <li><code>/monitor [linha] [ponto] [horário]</code> — inicia monitoramento de uma linha em ponto específico a partir de um horário. O ponto é o número encontrado no site/app oficial da EMTU.</li>
+              <li><code>/stop [linha]</code> — para monitoramento específico ou todos.</li>
+              <li><code>/list</code> ou <code>listar</code> — lista monitoramentos ativos.</li>
+              <li><code>/where [linha] [ida/volta]</code> — localização em tempo real dos ônibus.</li>
+              <li><code>/search [termo]</code> ou <code>buscar [termo]</code> — busca linhas e paradas.</li>
+              <li><code>/status</code> — estatísticas pessoais e status do sistema.</li>
+              <li><code>/help</code> ou <code>ajuda</code> — lista todos os comandos.</li>
             </ul>
           </div>
           <div class="doc-section" id="d-config">
             <h3>Configuração</h3>
-            <p>Edite o arquivo <code>.env</code> com suas chaves e preferências.</p>
+            <p>Edite o arquivo <code>.env</code> com suas chaves e preferências:</p>
+            <ul>
+              <li><strong>QUIET_HOURS</strong>: Horário em que o bot para de enviar alertas (ex: 23-06 = das 23h às 6h). Após esse horário, se o ônibus não passou, já é considerado preocupante e a pessoa deve estar em alerta.</li>
+              <li><strong>PROXIMITY_THRESHOLD_METERS</strong>: Distância em metros para disparar o alerta.</li>
+              <li><strong>CHECK_INTERVAL_MINUTES</strong>: Intervalo de verificação em minutos.</li>
+              <li><strong>MAX_ALERTS_PER_ROUTE</strong>: Limite máximo de alertas por linha (anti-spam). Se já foram enviados 3 alertas de proximidade para a mesma linha, não enviará mais para evitar spam.</li>
+            </ul>
+            <div class="callout">
+              <strong>💡 Como encontrar o número do ponto:</strong>
+              <p>O número do ponto pode ser encontrado no site oficial da EMTU ou no app móvel oficial. Os pontos são numerados sequencialmente ao longo da rota.</p>
+              <p><em>Feature futura:</em> Possibilidade de usar nome da parada (ex: Terminal Barão Geraldo) em vez do número específico.</p>
+            </div>
           </div>
           <div class="doc-section" id="d-instalacao">
             <h3>Instalação</h3>
             <ol>
               <li>Clone o repositório.</li>
-              <li>Instale dependências.</li>
-              <li>Configure o <code>.env</code>.</li>
-              <li>Inicie o bot.</li>
+              <li>Instale dependências com <code>npm install</code>.</li>
+              <li>Configure o <code>.env</code> com suas credenciais.</li>
+              <li>Inicie o bot com <code>npm start</code>.</li>
+              <li>Escaneie o QR Code que aparece no terminal.</li>
+              <li>Envie <code>/monitor [linha] [ponto] [horário]</code> para começar a monitorar.</li>
             </ol>
           </div>
           <div class="doc-section" id="d-docker">
             <h3>Deploy com Docker</h3>
-<pre class="code"><button class="btn copy" data-copy="docker build -t emtu-live . && docker run -e WHATSAPP_NUMBER -e EMTU_API_KEY emtu-live">Copiar</button><code>$ docker build -t emtu-live .
+<pre class="code"><button class="btn copy" data-copy="docker build -t emtu-live . && docker run -e WHATSAPP_NUMBER ">Copiar</button><code>$ docker build -t emtu-live .
 $ docker run -e WHATSAPP_NUMBER -e EMTU_API_KEY emtu-live</code></pre>
           </div>
           <div class="doc-section" id="d-pm2">
@@ -410,13 +431,25 @@ WantedBy=multi-user.target</code></pre>
           </div>
           <div class="doc-section" id="d-limites">
             <h3>Limites & Cotas</h3>
-            <p>Defina backoff e rate limit para evitar bloqueios do WhatsApp Web.</p>
+            <p>O sistema possui mecanismos anti-spam para evitar notificações excessivas:</p>
+            <ul>
+              <li><strong>Limite de alertas por linha</strong>: Cada monitoramento tem um limite máximo de alertas (configurável via <code>MAX_ALERTS_PER_ROUTE</code>). Exemplo: se configurado para 3, após 3 alertas de proximidade para a mesma linha, não enviará mais alertas para evitar spam.</li>
+              <li><strong>Rate limiting</strong>: Configure <code>CHECK_INTERVAL_MINUTES</code> para controlar a frequência de verificação.</li>
+              <li><strong>Horários silenciosos</strong>: Use <code>QUIET_HOURS</code> para definir quando parar de enviar alertas.</li>
+            </ul>
+            <div class="callout warn">⚠️ Defina limites adequados para evitar bloqueios do WhatsApp Web.</div>
           </div>
           <div class="doc-section" id="d-troubleshooting">
             <h3>Troubleshooting</h3>
             <div class="callout warn"><strong>WhatsApp não conecta?</strong> Limpe o cache, reconecte o QR Code e verifique se há outra sessão ativa.</div>
           </div>
-          <div class="doc-section" id="d-faq"><h3>FAQ</h3><p><strong>Funciona no celular?</strong> Sim, via WhatsApp Web no navegador do desktop que hospeda o bot.</p></div>
+          <div class="doc-section" id="d-faq">
+            <h3>FAQ</h3>
+            <p><strong>Funciona no celular?</strong> Sim, após escanear o QrCode, iniciará uma conversa com o bot.</p>
+            <p><strong>Como descobrir o número do ponto?</strong> Acesse o site oficial da EMTU ou use o app móvel oficial. Os pontos são numerados sequencialmente ao longo da rota.</p>
+            <p><strong>Por que parou de enviar alertas?</strong> Pode ter atingido o limite máximo configurado em <code>MAX_ALERTS_PER_ROUTE</code> ou estar dentro do <code>QUIET_HOURS</code>.</p>
+            <p><strong>Como evitar spam de notificações?</strong> Configure adequadamente os valores de <code>MAX_ALERTS_PER_ROUTE</code> e <code>CHECK_INTERVAL_MINUTES</code>.</p>
+          </div>
         </article>
         <aside class="toc" aria-label="Índice desta página">
           <strong>TOC</strong>
@@ -429,11 +462,16 @@ WantedBy=multi-user.target</code></pre>
     <section id="examples" class="section container">
       <h2>Exemplos</h2>
       <div class="examples">
-        <div class="example"><strong>Monitorar linha</strong><br/><code>/monitor 001 708 1</code></div>
-        <div class="example"><strong>Buscar terminal</strong><br/><code>/monitor 033 376 2</code></div>
-        <div class="example"><strong>Parar monitoramento</strong><br/><code>/stop</code></div>
-        <div class="example"><strong>Status</strong><br/><code>/status</code></div>
-        <div class="example"><strong>Silenciar à noite</strong><br/><code>QUIET_HOURS=23-06</code></div>
+        <div class="example"><strong>Monitorar linha</strong><br/><code>/monitor 708 01 08:30</code></div>
+        <div class="example"><strong>Ver localização</strong><br/><code>/where 708BI2 ida</code></div>
+        <div class="example"><strong>Buscar linhas</strong><br/><code>/search 376</code></div>
+        <div class="example"><strong>Buscar pontos</strong><br/><code>/search Terminal São Mateus</code></div>
+        <div class="example"><strong>Listar monitoramentos</strong><br/><code>/list</code></div>
+        <div class="example"><strong>Parar monitoramento</strong><br/><code>/stop 001</code></div>
+        <div class="example"><strong>Status pessoal</strong><br/><code>/status</code></div>
+        <div class="example"><strong>Ajuda</strong><br/><code>/help</code></div>
+        <div class="example"><strong>Limite anti-spam</strong><br/><code>MAX_ALERTS_PER_ROUTE=3</code></div>
+        <div class="example"><strong>Horário limite de alerta</strong><br/><code>QUIET_HOURS=2</code></div>
       </div>
     </section>
 
@@ -557,14 +595,26 @@ WantedBy=multi-user.target</code></pre>
       if(!norm) return '❌ Informe um comando.';
       if(/^\/monitor\b/.test(norm)){
         const parts = norm.split(/\s+/);
-        const empresa = parts[1]||'001';
-        const linha = parts[2]||'708';
-        const sentido = parts[3]||'1';
-        return `🚍 Monitorando ${empresa} ${linha} (sentido ${sentido}). Estimativa: 5–8 min.`;
+        const linha = parts[1]||'001';
+        const ponto = parts[2]||'12345';
+        const horario = parts[3]||'08:30';
+        return `✅ Monitoramento iniciado!\n🚌 Linha: ${linha}\n📍 Ponto: ${ponto}\n⏰ Início: ${horario}\n📏 Distância de alerta: 500m`;
       }
-      if(/^\/status\b/.test(norm)) return '✅ Sistema online — fila: 0, uptime: 3d 4h.';
-      if(/^\/stop\b/.test(norm)) return '🛑 Monitoramento encerrado.';
-      return '❓ Comando não reconhecido. Tente /monitor, /status ou /stop.';
+      if(/^\/where\b/.test(norm)){
+        const parts = norm.split(/\s+/);
+        const linha = parts[1]||'708';
+        const sentido = parts[2]||'ida';
+        return `� Localizações da linha ${linha} - Sentido ${sentido}:\n🚌 3 veículos em operação encontrados`;
+      }
+      if(/^\/search\b/.test(norm) || /^buscar\b/.test(norm)){
+        const termo = norm.split(/\s+/).slice(1).join(' ')||'708';
+        return `🔍 Resultados para "${termo}":\n🚌 Linha: ${termo} - EMTU\n📍 5 paradas encontradas`;
+      }
+      if(/^\/list\b/.test(norm) || /^listar\b/.test(norm)) return '📋 Monitoramentos Ativos:\n1. 🚌 Linha 001\n   📍 Terminal São Mateus';
+      if(/^\/status\b/.test(norm)) return '📊 Status: ✅ Online\n👤 Monitoramentos: 1\n🔔 Alertas hoje: 3';
+      if(/^\/stop\b/.test(norm)) return '🛑 Monitoramento(s) encerrado(s).';
+      if(/^\/help\b/.test(norm) || /^ajuda\b/.test(norm)) return '🚌 Comandos: /monitor, /where, /search, /list, /status, /stop, /help';
+      return '❓ Comando não reconhecido. Tente /help para ver comandos disponíveis.';
     }
 
     document.getElementById('run').addEventListener('click',()=>{
@@ -580,10 +630,10 @@ WantedBy=multi-user.target</code></pre>
     const searchInput = document.getElementById('searchInput');
     const results = document.getElementById('results');
 
-    const index = Array.from(document.querySelectorAll('h2, h3, [id^=cmd-]')).map(h=>({
+    const index = Array.from(document.querySelectorAll('h2, h3, [id^=cmd-], [id^=d-]')).map(h=>({
       id: h.id || h.textContent.toLowerCase().replace(/[^a-z0-9]+/gi,'-'),
-      text: h.textContent.trim(),
-    }));
+      text: h.querySelector('h3') ? h.querySelector('h3').textContent.trim() : h.textContent.trim(),
+    })).filter(item => item.text && item.id);
 
     function openSearch(){ searchModal.classList.add('open'); results.innerHTML=''; searchInput.value=''; searchInput.focus(); }
     function closeSearch(){ searchModal.classList.remove('open'); }
@@ -600,6 +650,11 @@ WantedBy=multi-user.target</code></pre>
       const q = searchInput.value.toLowerCase();
       const hits = index.filter(i=> i.text.toLowerCase().includes(q)).slice(0,12);
       results.innerHTML = hits.map(h=>`<a class="result" href="#${h.id}">${h.text}</a>`).join('') || '<div class="muted">Sem resultados…</div>';
+      
+      // Adiciona event listeners para fechar o modal ao clicar em um link
+      results.querySelectorAll('a.result').forEach(link => {
+        link.addEventListener('click', closeSearch);
+      });
     });
 
     // ======== Build TOC ========
