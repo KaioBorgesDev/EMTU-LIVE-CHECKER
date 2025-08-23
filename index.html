@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EMTU Live Checker 🚌 — Documentação & Playground</title>
+  <meta name="description" content="EMTU Live Checker: bot que envia alertas inteligentes do seu ônibus via WhatsApp. Docs claras, exemplos e playground interativo." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230070f3'/%3E%3Cpath d='M10 22h44v22H10z' fill='%23fff'/%3E%3Ccircle cx='20' cy='46' r='4' fill='%2300c853'/%3E%3Ccircle cx='44' cy='46' r='4' fill='%2300c853'/%3E%3C/svg%3E" />
+  <style>
+    /* ==========================
+       Design System / Tokens
+       ========================== */
+    :root{
+      --bg: #f7f9fc;
+      --surface: #ffffff;
+      --text: #1a1f2b;
+      --muted: #64748b;
+      --primary: #0070f3; /* azul */
+      --primary-700:#0057c2;
+      --secondary: #00c853; /* verde */
+      --secondary-700:#00a046;
+      --accent: #e53935; /* vermelho EMTU */
+      --warning:#ffb300;
+      --purple:#7c3aed;
+      --shadow: 0 10px 30px rgba(2,6,23,.08);
+      --radius: 16px;
+      --border: 1px solid rgba(2,6,23,.08);
+      --maxw: 1200px;
+    }
+    [data-theme="dark"]{
+      --bg: #0b1020;
+      --surface: #11162a;
+      --text: #e6e8ef;
+      --muted: #98a2b3;
+      --shadow: 0 10px 30px rgba(0,0,0,.5);
+      --border: 1px solid rgba(255,255,255,.08);
+    }
+    @media (prefers-color-scheme: dark){ html[data-theme="auto"]{ --bg:#0b1020; --surface:#11162a; --text:#e6e8ef; --muted:#98a2b3; --shadow:0 10px 30px rgba(0,0,0,.5); --border:1px solid rgba(255,255,255,.08);} }
+
+    *{ box-sizing:border-box }
+    html,body{ margin:0; padding:0; }
+    body{ font: 400 16px/1.6 system-ui, -apple-system, Segoe UI, Inter, Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; background:var(--bg); color:var(--text); }
+    a{ color:var(--primary); text-decoration:none }
+    a:hover{ text-decoration:underline }
+    .container{ max-width:var(--maxw); margin:auto; padding:0 20px }
+    .btn{ display:inline-flex; align-items:center; gap:.5rem; padding:.8rem 1.1rem; border-radius:12px; border:var(--border); background:var(--surface); box-shadow:var(--shadow); font-weight:600; transition:.2s transform,.2s opacity }
+    .btn:hover{ transform:translateY(-2px) }
+    .btn.primary{ background:linear-gradient(135deg,var(--primary),#2aa9ff); color:#fff; border:none }
+    .btn.secondary{ background:linear-gradient(135deg,var(--secondary),#3cf58c); color:#052316; border:none }
+    .btn.ghost{ background:transparent }
+
+    /* Skip link */
+    .skip{ position:absolute; left:-999px; top:-999px }
+    .skip:focus{ left:12px; top:12px; background:#fff; padding:.5rem .8rem; border-radius:8px; box-shadow:var(--shadow) }
+
+    /* Navbar */
+    .navbar{ position:sticky; top:0; z-index:100; backdrop-filter:saturate(180%) blur(10px); background:linear-gradient(90deg,rgba(255,255,255,.75),rgba(255,255,255,.5)); border-bottom:var(--border) }
+    [data-theme="dark"] .navbar{ background:linear-gradient(90deg,rgba(17,22,42,.7),rgba(17,22,42,.4)) }
+    .nav-inner{ display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.8rem 0 }
+    .brand{ display:flex; align-items:center; gap:.75rem; font-weight:800; letter-spacing:.2px }
+    .brand .logo{ width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,var(--primary),var(--purple)); display:grid; place-items:center; color:#fff; box-shadow:var(--shadow) }
+    .nav-links{ display:flex; gap:1rem; flex-wrap:wrap }
+    .nav-links a{ padding:.5rem .7rem; border-radius:10px }
+    .nav-actions{ display:flex; gap:.5rem; align-items:center }
+    .toggle{ cursor:pointer; padding:.5rem .7rem; border-radius:10px; border:var(--border) }
+
+    /* Hero */
+    .hero{ position:relative; overflow:hidden; }
+    .hero-wrap{ display:grid; grid-template-columns: 1.1fr .9fr; gap:2rem; align-items:center; padding:4rem 0 }
+    .kicker{ color:var(--secondary); font-weight:700; text-transform:uppercase; letter-spacing:.12em; font-size:.8rem }
+    .title{ font-size: clamp(2rem, 2.4rem + 1vw, 3.2rem); line-height:1.1; margin:.6rem 0 }
+    .subtitle{ color:var(--muted); font-size:1.1rem }
+    .cta{ display:flex; gap:.8rem; margin-top:1.2rem; flex-wrap:wrap }
+    .hero-card{ position:relative; min-height:320px; border-radius:20px; border:var(--border); box-shadow:var(--shadow); overflow:hidden; background: radial-gradient(1200px 600px at 80% -20%, rgba(0,112,243,.35), transparent 60%), linear-gradient(180deg, var(--surface), transparent 90%) }
+    .hero-card img{ position:absolute; inset:auto 0 0 0; width:100%; height:100%; object-fit:cover; opacity:.9; filter:saturate(1.1) }
+    .badge{ position:absolute; top:12px; left:12px; background:rgba(0,0,0,.6); color:#fff; padding:.35rem .6rem; border-radius:999px; font-size:.8rem; backdrop-filter: blur(4px) }
+
+    /* Highlights */
+    .section{ padding:3rem 0 }
+    .section h2{ margin:0 0 1rem; font-size:1.8rem }
+    .muted{ color:var(--muted) }
+    .grid{ display:grid; gap:1rem }
+    .grid.cols-3{ grid-template-columns: repeat(auto-fit,minmax(220px,1fr)) }
+    .card{ background:var(--surface); border:var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:1.1rem }
+    .card:hover{ transform:translateY(-3px); transition:.2s transform }
+    .chip{ display:inline-flex; align-items:center; gap:.4rem; font-weight:700; padding:.35rem .6rem; border-radius:999px; font-size:.78rem; }
+    .chip.blue{ background:rgba(0,112,243,.12); color:#0b5cc7 }
+    .chip.green{ background:rgba(0,200,83,.12); color:#0e7a3b }
+    .chip.red{ background:rgba(229,57,53,.12); color:#a01614 }
+    .chip.purple{ background:rgba(124,58,237,.12); color:#5b21b6 }
+    .chip.amber{ background:rgba(255,179,0,.16); color:#8a5a00 }
+
+    /* How it works */
+    .steps{ counter-reset:step }
+    .step{ position:relative; padding-left:3rem }
+    .step:before{ counter-increment:step; content:counters(step, '.') ; position:absolute; left:0; top:0; width:2.2rem; height:2.2rem; border-radius:12px; display:grid; place-items:center; font-weight:800; background:linear-gradient(135deg,var(--secondary),#3cf58c); color:#052316; box-shadow:var(--shadow) }
+
+    /* Playground */
+    .play{ display:grid; grid-template-columns: 1fr 1fr; gap:1rem }
+    .code{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background: #0f172a; color: #e2e8f0; padding:1rem; border-radius:12px; overflow:auto; position:relative }
+    .code .copy{ position:absolute; top:8px; right:8px }
+    pre{ margin:0; white-space:pre-wrap }
+    .io{ background:var(--surface); border:var(--border); border-radius:12px; padding:1rem; min-height:180px }
+    .input-row{ display:flex; gap:.5rem; margin-bottom:.8rem }
+    .input{ flex:1; padding:.7rem .8rem; border-radius:10px; border:var(--border); background:var(--surface) }
+
+    /* API table */
+    table{ width:100%; border-collapse:separate; border-spacing:0 10px }
+    th,td{ text-align:left; padding:.8rem; background:var(--surface); border:var(--border) }
+    th{ position:sticky; top:0; z-index:1 }
+    td:first-child, th:first-child{ border-top-left-radius:12px; border-bottom-left-radius:12px }
+    td:last-child, th:last-child{ border-top-right-radius:12px; border-bottom-right-radius:12px }
+
+    /* Docs layout */
+    .docs{ display:grid; grid-template-columns:260px 1fr 220px; gap:1rem }
+    .sidebar{ position:sticky; top:70px; align-self:start; max-height:calc(100vh - 90px); overflow:auto; padding:1rem; background:var(--surface); border:var(--border); border-radius:12px }
+    .sidebar input{ width:100%; margin-bottom:.6rem; padding:.5rem .6rem; border-radius:8px; border:var(--border); background:transparent; color:var(--text) }
+    .toc{ position:sticky; top:70px; max-height:calc(100vh - 90px); overflow:auto; padding:1rem; background:var(--surface); border:var(--border); border-radius:12px }
+    .docs-content .doc-section{ margin-bottom:2rem }
+    .callout{ border-left:4px solid var(--primary); background:rgba(0,112,243,.08); padding:.8rem 1rem; border-radius:8px }
+    .callout.warn{ border-color:var(--warning); background:rgba(255,179,0,.12) }
+    .callout.ok{ border-color:var(--secondary); background:rgba(0,200,83,.12) }
+
+    /* Examples gallery */
+    .examples{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem }
+    .example{ padding:1rem; border-radius:12px; border:var(--border); background:linear-gradient(135deg, rgba(0,112,243,.06), rgba(0,200,83,.08)) }
+
+    /* Footer */
+    footer{ margin-top:3rem; padding:2rem 0; border-top:var(--border); color:var(--muted) }
+
+    /* Fab search */
+    .kbd{ background:rgba(148,163,184,.25); padding:.15rem .4rem; border-radius:6px; border:1px solid rgba(148,163,184,.4); font-size:.8rem }
+    .modal{ position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.4) }
+    .modal.open{ display:grid }
+    .modal-card{ width:min(720px, 92%); background:var(--surface); border:var(--border); border-radius:14px; box-shadow:var(--shadow); padding:1rem }
+    .modal-card input{ width:100%; padding:.8rem; border-radius:10px; border:var(--border); background:transparent; color:var(--text) }
+    .results{ margin-top:.8rem; max-height:320px; overflow:auto; display:grid; gap:.5rem }
+    .result{ padding:.6rem .7rem; border-radius:10px; border:var(--border) }
+
+    /* Animations */
+    .reveal{ opacity:0; transform: translateY(10px); transition: .5s ease }
+    .reveal.in{ opacity:1; transform:none }
+    .pulse{ animation: pulse 2s infinite }
+    @keyframes pulse{ 0%,100%{ transform:scale(1)} 50%{ transform:scale(1.02)} }
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .hero-wrap{ grid-template-columns:1fr; }
+      .docs{ grid-template-columns:1fr; }
+      .play{ grid-template-columns:1fr; }
+      .toc{ display:none }
+      .sidebar{ position:relative; top:auto; max-height:none }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="container nav-inner">
+      <div class="brand">
+        <div class="logo">🚌</div>
+        <span>EMTU Live Checker</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#inicio">Início</a>
+        <a href="#docs">Docs</a>
+        <a href="#api">API</a>
+        <a href="#playground">Playground</a>
+        <a href="#deploy">Deploy</a>
+        <a href="#contribuicao">Contribuir</a>
+      </nav>
+      <div class="nav-actions">
+        <button id="themeBtn" class="toggle" aria-label="Alternar tema">🌙</button>
+        <a class="btn ghost" href="https://github.com/KaioBorgesDev/EMTU-LIVE-CHECKER" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn primary" href="#docs">Começar</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <header id="inicio" class="hero">
+    <div class="container hero-wrap">
+      <div>
+        <div class="kicker">alertas via WhatsApp</div>
+        <h1 class="title">EMTU Live Checker 🚌</h1>
+        <p class="subtitle">Receba alertas inteligentes do seu ônibus via WhatsApp. Simples, confiável e com mais dados que o app oficial.</p>
+        <div class="cta">
+          <a class="btn primary" href="#quickstart">Comece agora em 5 minutos</a>
+          <a class="btn secondary" href="#playground">Ver Playground</a>
+          <a class="btn" href="#examples">Ver Exemplos</a>
+        </div>
+        <div style="margin-top:1rem" class="muted">Dica: pressione <span class="kbd">Ctrl</span>/<span class="kbd">⌘</span> + <span class="kbd">K</span> para buscar em todo o site.</div>
+      </div>
+      <div class="hero-card reveal" style="min-height:360px">
+        <span class="badge">Foto ilustrativa - EMTU</span>
+        <img alt="Ônibus EMTU" src="https://lh7-rt.googleusercontent.com/docsz/AD_4nXdGyWwI0IfDdHEooNglVmexOnKwdk3avWyqs2XgpOu1LsIoGbFETl5zA4GmxRsHmQSNh_lpiHDHTjW2pCba8ovphqSjE1GHk5EcD9zJm3Rv8jTnD1TNrs5dW7eKXS23j4TgRTmEUQ?key=DXQbphlezPOdtKzwsV2iaDEJ"/>
+      </div>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <!-- HIGHLIGHTS -->
+    <section class="section container">
+      <h2>Benefícios principais</h2>
+      <p class="muted">Mais rápido para começar, robusto em produção e ótimo para quem só quer chegar no horário.</p>
+      <div class="grid cols-3">
+        <div class="card reveal"><div class="chip blue">💬 WhatsApp gratuito</div><p><strong>Funciona até no plano grátis</strong> — perfeito para quem tem franquia zero-rating de WhatsApp.</p></div>
+        <div class="card reveal"><div class="chip green">🔔 Alertas</div><p><strong>Alertas inteligentes e configuráveis</strong> com janelas de horário, distância e eventos.</p></div>
+        <div class="card reveal"><div class="chip red">🕒 24/7</div><p><strong>Monitoramento contínuo</strong> com watchdog, backoff e retomada automática.</p></div>
+        <div class="card reveal"><div class="chip purple">🛰️ Mais dados</div><p><strong>Rota normal/instável</strong>, posição GPS, visão satélite e estimativas realistas.</p></div>
+        <div class="card reveal"><div class="chip amber">🧩 Fácil</div><p><strong>Setup em minutos</strong>, comandos simples e documentação direta.</p></div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="section container">
+      <h2>Como funciona</h2>
+      <div class="grid cols-3">
+        <div class="card step reveal"><h3>Conecte</h3><p>Configure seu número do WhatsApp e o token no <code>.env</code>.</p></div>
+        <div class="card step reveal"><h3>Monitore</h3><p>Use <code>/monitor 001 708 1</code> para iniciar um monitoramento.</p></div>
+        <div class="card step reveal"><h3>Receba</h3><p>Alertas são enviados quando o ônibus estiver chegando, atrasado ou fora de rota.</p></div>
+      </div>
+    </section>
+
+    <!-- QUICKSTART -->
+    <section id="quickstart" class="section container">
+      <h2>Quickstart</h2>
+      <div class="play">
+        <div class="code">
+          <button class="btn copy" data-copy="/monitor 001 708 1">Copiar</button>
+<pre><code>$ /monitor 001 708 1
+Iniciando monitoramento da linha <001 708 sentido 1>
+Use /stop para encerrar.
+Dica: /status mostra o status do sistema.</code></pre>
+        </div>
+        <div class="io">
+          <div class="input-row">
+            <input id="cmd" class="input" placeholder="Digite um comando, ex: /monitor 001 708 1" aria-label="Campo de comando"/>
+            <button class="btn primary" id="run">Executar</button>
+          </div>
+          <pre id="out" aria-live="polite">💡 Digite um comando para testar.</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLAYGROUND / SANDBOX -->
+    <section id="playground" class="section container">
+      <h2>Playground</h2>
+      <div class="play">
+        <div class="io">
+          <h3>Simulador</h3>
+          <p class="muted">Teste respostas do bot localmente. Comandos suportados: <code>/monitor</code>, <code>/status</code>, <code>/stop</code>.</p>
+          <div class="input-row">
+            <input id="pg-cmd" class="input" placeholder="/monitor 376"/>
+            <button class="btn" id="pg-run">Rodar</button>
+          </div>
+          <pre id="pg-out">—</pre>
+        </div>
+        <div class="code">
+          <button class="btn copy" data-target="#env" aria-label="Copiar .env">Copiar</button>
+<pre><code id="env"># .env (exemplo)
+WHATSAPP_NUMBER=+55XXXXXXXXXXX
+EMTU_API_KEY=coloque_sua_chave
+ALERT_RADIUS_METERS=300
+QUIET_HOURS=23-06
+</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- API REFERENCE -->
+    <section id="api" class="section container">
+      <h2>API Reference</h2>
+      <table aria-label="Tabela de comandos">
+        <thead>
+          <tr><th>Comando</th><th>Descrição</th><th>Exemplo</th></tr>
+        </thead>
+        <tbody>
+          <tr id="cmd-monitor"><td><code>/monitor &lt;empresa&gt; &lt;linha&gt; &lt;sentido&gt;</code></td><td>Inicia o monitoramento da linha.</td><td><code>/monitor 001 708 1</code></td></tr>
+          <tr id="cmd-status"><td><code>/status</code></td><td>Mostra o status do sistema, fila e uptime.</td><td><code>/status</code></td></tr>
+          <tr id="cmd-stop"><td><code>/stop</code></td><td>Interrompe monitoramentos ativos para seu número.</td><td><code>/stop</code></td></tr>
+        </tbody>
+      </table>
+      <p class="muted">Links diretos: <a href="#cmd-monitor">/monitor</a> • <a href="#cmd-status">/status</a> • <a href="#cmd-stop">/stop</a></p>
+    </section>
+
+    <!-- DOCS -->
+    <section id="docs" class="section container">
+      <h2>Documentação</h2>
+      <div class="docs">
+        <aside class="sidebar" aria-label="Navegação da documentação">
+          <input type="search" id="docSearch" placeholder="Buscar… (Ctrl/⌘+K)" aria-label="Buscar na documentação"/>
+          <nav id="docNav">
+            <a href="#d-quickstart">Quickstart</a><br/>
+            <a href="#d-comandos">Comandos</a><br/>
+            <a href="#d-config">Configuração</a><br/>
+            <a href="#d-instalacao">Instalação</a><br/>
+            <a href="#d-docker">Deploy com Docker</a><br/>
+            <a href="#d-pm2">Deploy com PM2</a><br/>
+            <a href="#d-systemd">Deploy com Systemd</a><br/>
+            <a href="#d-limites">Limites & Cotas</a><br/>
+            <a href="#d-troubleshooting">Troubleshooting</a><br/>
+            <a href="#d-faq">FAQ</a><br/>
+          </nav>
+        </aside>
+        <article class="docs-content">
+          <div class="doc-section" id="d-quickstart">
+            <h3>Quickstart</h3>
+            <div class="callout ok">Requer Node 18+ e acesso ao WhatsApp Web.</div>
+<pre class="code"><button class="btn copy" data-copy="git clone https://github.com/KaioBorgesDev/EMTU-LIVE-CHECKER && cd EMTU-LIVE-CHECKER && cp .env.example .env">Copiar</button><code>$ git clone …
+$ cd EMTU-LIVE-CHECKER
+$ cp .env.example .env
+$ npm i && npm run start</code></pre>
+          </div>
+          <div class="doc-section" id="d-comandos">
+            <h3>Comandos</h3>
+            <ul>
+              <li><code>/monitor</code> — inicia um monitoramento de linha.</li>
+              <li><code>/status</code> — status do sistema.</li>
+              <li><code>/stop</code> — encerra monitoramentos.</li>
+            </ul>
+          </div>
+          <div class="doc-section" id="d-config">
+            <h3>Configuração</h3>
+            <p>Edite o arquivo <code>.env</code> com suas chaves e preferências.</p>
+          </div>
+          <div class="doc-section" id="d-instalacao">
+            <h3>Instalação</h3>
+            <ol>
+              <li>Clone o repositório.</li>
+              <li>Instale dependências.</li>
+              <li>Configure o <code>.env</code>.</li>
+              <li>Inicie o bot.</li>
+            </ol>
+          </div>
+          <div class="doc-section" id="d-docker">
+            <h3>Deploy com Docker</h3>
+<pre class="code"><button class="btn copy" data-copy="docker build -t emtu-live . && docker run -e WHATSAPP_NUMBER -e EMTU_API_KEY emtu-live">Copiar</button><code>$ docker build -t emtu-live .
+$ docker run -e WHATSAPP_NUMBER -e EMTU_API_KEY emtu-live</code></pre>
+          </div>
+          <div class="doc-section" id="d-pm2">
+            <h3>Deploy com PM2</h3>
+<pre class="code"><button class="btn copy" data-copy="pm2 start npm --name emtu -- run start && pm2 save">Copiar</button><code>$ pm2 start npm --name emtu -- run start
+$ pm2 save</code></pre>
+          </div>
+          <div class="doc-section" id="d-systemd">
+            <h3>Deploy com Systemd</h3>
+<pre class="code"><button class="btn copy" data-copy='[Unit]\nDescription=EMTU Live Checker\n[Service]\nWorkingDirectory=/opt/emtu\nExecStart=/usr/bin/npm run start\nRestart=on-failure\n[Install]\nWantedBy=multi-user.target'>Copiar</button><code>[Unit]
+Description=EMTU Live Checker
+[Service]
+WorkingDirectory=/opt/emtu
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target</code></pre>
+          </div>
+          <div class="doc-section" id="d-limites">
+            <h3>Limites & Cotas</h3>
+            <p>Defina backoff e rate limit para evitar bloqueios do WhatsApp Web.</p>
+          </div>
+          <div class="doc-section" id="d-troubleshooting">
+            <h3>Troubleshooting</h3>
+            <div class="callout warn"><strong>WhatsApp não conecta?</strong> Limpe o cache, reconecte o QR Code e verifique se há outra sessão ativa.</div>
+          </div>
+          <div class="doc-section" id="d-faq"><h3>FAQ</h3><p><strong>Funciona no celular?</strong> Sim, via WhatsApp Web no navegador do desktop que hospeda o bot.</p></div>
+        </article>
+        <aside class="toc" aria-label="Índice desta página">
+          <strong>TOC</strong>
+          <div id="tocList" class="muted" style="margin-top:.5rem"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- EXAMPLES -->
+    <section id="examples" class="section container">
+      <h2>Exemplos</h2>
+      <div class="examples">
+        <div class="example"><strong>Monitorar linha</strong><br/><code>/monitor 001 708 1</code></div>
+        <div class="example"><strong>Buscar terminal</strong><br/><code>/monitor 033 376 2</code></div>
+        <div class="example"><strong>Parar monitoramento</strong><br/><code>/stop</code></div>
+        <div class="example"><strong>Status</strong><br/><code>/status</code></div>
+        <div class="example"><strong>Silenciar à noite</strong><br/><code>QUIET_HOURS=23-06</code></div>
+      </div>
+    </section>
+
+    <!-- DEPLOY GUIDE -->
+    <section id="deploy" class="section container">
+      <h2>Guia de Deploy</h2>
+      <div class="grid cols-3">
+        <div class="card"><h3>Docker</h3><p>Imagem leve, isolada e fácil de atualizar.</p></div>
+        <div class="card"><h3>PM2</h3><p>Rodando como daemon com restart automático.</p></div>
+        <div class="card"><h3>Systemd</h3><p>Integração nativa com o sistema operacional.</p></div>
+      </div>
+    </section>
+
+    <!-- CHANGELOG & CONTRIB -->
+    <section id="changelog" class="section container">
+      <h2>Changelog</h2>
+      <ul>
+        <li><strong>v1.2.0</strong> — Melhoria de alertas e estabilidade.</li>
+        <li><strong>v1.1.0</strong> — Playground e docs expandidas.</li>
+        <li><strong>v1.0.0</strong> — Primeira versão estável.</li>
+      </ul>
+    </section>
+    <section id="contribuicao" class="section container">
+      <h2>Contribuição</h2>
+      <p>Abra um PR com melhorias de código, docs e exemplos. Padrões: Conventional Commits e lint em CI.</p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container" style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap">
+      <div>© 2025 EMTU Live Checker — <span class="muted">v1.2.0</span></div>
+      <div>
+        <a class="btn ghost" href="#inicio">Voltar ao topo</a>
+        <a class="btn" href="https://github.com/KaioBorgesDev/EMTU-LIVE-CHECKER" target="_blank">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <div id="searchModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="searchLabel">
+    <div class="modal-card">
+      <input id="searchInput" placeholder="Busque por seções, comandos e tópicos…" aria-label="Busca" />
+      <div id="results" class="results"></div>
+    </div>
+  </div>
+
+  <script>
+    // ======== Tema (persistente) ========
+    (function(){
+      const key = 'emtu-theme';
+      const saved = localStorage.getItem(key) || 'auto';
+      if(saved === 'dark') document.documentElement.setAttribute('data-theme','dark');
+      else if(saved === 'light') document.documentElement.setAttribute('data-theme','light');
+      else document.documentElement.setAttribute('data-theme','auto');
+      const btn = document.getElementById('themeBtn');
+      const cycle = { 'auto':'dark', 'dark':'light', 'light':'auto' };
+      btn.addEventListener('click',()=>{
+        const current = document.documentElement.getAttribute('data-theme')||'auto';
+        const next = cycle[current];
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem(key, next);
+        btn.textContent = next==='dark'?'🌙':next==='light'?'☀️':'🌓';
+      });
+    })();
+
+    // ======== Reveal on scroll ========
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+    },{ threshold:.12 });
+    document.querySelectorAll('.reveal').forEach(el=> io.observe(el));
+
+    // ======== Copy buttons ========
+    function copy(text){ navigator.clipboard.writeText(text).then(()=>{ /* no-op */ }); }
+    document.querySelectorAll('.btn.copy').forEach(btn=>{
+      const target = btn.getAttribute('data-target');
+      const text = btn.getAttribute('data-copy');
+      btn.addEventListener('click',()=>{
+        let val = text;
+        if(target){ const node = document.querySelector(target); val = node ? node.innerText.trim() : text; }
+        copy(val);
+        btn.textContent = 'Copiado!';
+        setTimeout(()=> btn.textContent = 'Copiar', 1200);
+      });
+    });
+
+    // ======== Quickstart runner ========
+    const runner = (cmd)=>{
+      const norm = cmd.trim();
+      if(!norm) return '❌ Informe um comando.';
+      if(/^\/monitor\b/.test(norm)){
+        const parts = norm.split(/\s+/);
+        const empresa = parts[1]||'001';
+        const linha = parts[2]||'708';
+        const sentido = parts[3]||'1';
+        return `🚍 Monitorando ${empresa} ${linha} (sentido ${sentido}). Estimativa: 5–8 min.`;
+      }
+      if(/^\/status\b/.test(norm)) return '✅ Sistema online — fila: 0, uptime: 3d 4h.';
+      if(/^\/stop\b/.test(norm)) return '🛑 Monitoramento encerrado.';
+      return '❓ Comando não reconhecido. Tente /monitor, /status ou /stop.';
+    }
+
+    document.getElementById('run').addEventListener('click',()=>{
+      const v = document.getElementById('cmd').value; document.getElementById('out').textContent = runner(v);
+    });
+
+    document.getElementById('pg-run').addEventListener('click',()=>{
+      const v = document.getElementById('pg-cmd').value; document.getElementById('pg-out').textContent = runner(v);
+    });
+
+    // ======== Global Search (Ctrl/Cmd + K) ========
+    const searchModal = document.getElementById('searchModal');
+    const searchInput = document.getElementById('searchInput');
+    const results = document.getElementById('results');
+
+    const index = Array.from(document.querySelectorAll('h2, h3, [id^=cmd-]')).map(h=>({
+      id: h.id || h.textContent.toLowerCase().replace(/[^a-z0-9]+/gi,'-'),
+      text: h.textContent.trim(),
+    }));
+
+    function openSearch(){ searchModal.classList.add('open'); results.innerHTML=''; searchInput.value=''; searchInput.focus(); }
+    function closeSearch(){ searchModal.classList.remove('open'); }
+
+    document.addEventListener('keydown',(e)=>{
+      const k = (e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k';
+      if(k){ e.preventDefault(); openSearch(); }
+      if(e.key==='Escape') closeSearch();
+    });
+
+    searchModal.addEventListener('click', (e)=>{ if(e.target===searchModal) closeSearch(); });
+
+    searchInput.addEventListener('input',()=>{
+      const q = searchInput.value.toLowerCase();
+      const hits = index.filter(i=> i.text.toLowerCase().includes(q)).slice(0,12);
+      results.innerHTML = hits.map(h=>`<a class="result" href="#${h.id}">${h.text}</a>`).join('') || '<div class="muted">Sem resultados…</div>';
+    });
+
+    // ======== Build TOC ========
+    const tocList = document.getElementById('tocList');
+    const currentDoc = document.querySelector('#docs .docs-content');
+    const headings = currentDoc.querySelectorAll('h3');
+    tocList.innerHTML = Array.from(headings).map(h=>`<div><a href="#${h.id}">${h.textContent}</a></div>`).join('');
+
+    // ======== Sidebar instant search ========
+    const docSearch = document.getElementById('docSearch');
+    const docNav = document.getElementById('docNav');
+    const links = Array.from(docNav.querySelectorAll('a'));
+    docSearch.addEventListener('input',()=>{
+      const q = docSearch.value.toLowerCase();
+      links.forEach(l=>{ const show = l.textContent.toLowerCase().includes(q); l.style.display = show ? 'block' : 'none'; });
+    });
+  </script>
+</body>
+</html>
